@@ -1,0 +1,78 @@
+Creating A DB Cluster From Base-
+
+1. SQL standard for DB Cluster is catalog cluster
+2. DB named postgres is default database for utilities, users etc.
+3. /usr/local/pgsql/data create DB cluster using initdb
+
+initdb -D /usr/local/pgsql/data --nodename foo
+-D is for directory (i.e. where to create DB ) // it creates DB if it doesn't exist but if data exists it will not run in order to prevent overwritting
+
+else do pg_ctl -D /usr/local/pgsql/data -o '--nodename foo' initdb
+
+4. pg_ctl stands for postgres Control it can be used to start stop server etc.
+
+5. PGDATA variable stands for the the root database cluster location
+i.e. here /usr/local/pgsql/data
+
+6. To keep it running in the back ground do >logfile 2>&1 &
+
+7. We may use pg_ctl start -l logfile. We can use -D here as well.
+
+8. the PID of this server is stored in postmaster.pid in data directory.
+
+9. By Convention each server must have a Coordinator + DataNode + a GTM-proxy.
+
+10. Both Coordinator and Datanode have a seperate DB.
+
+11. GTM is global transaction management feature to all the componenets. So it must run on a seperate server.
+
+12. We may run more than one GTM for higher availability.
+
+13. GTM are created using command-
+initgtm -Z gtm -D /usr/local/pgsql/data_gtm
+
+Here -Z specifies the type of node is gtm
+
+params related to GTM can be modified using gtm.conf
+
+14. Then we can start it using gtm -D /usr/local/pgsql/data_gtm
+
+15. GTM_proxy reduces the work load by grouping the messages between GTM and cluster nodes.
+
+16. It can be created using initgtm -Z gtm_proxy -D /usr/local/pgsql/data_gtm_proxy
+
+17. To start a GTM proxy do gtm_proxy -D /usr/local/pgsql/data_gtm_proxy
+
+18. Alternatively we can start GTM and GTM Proxy both using gtm_ctl as
+gtm_ctl start -Z (gtm_proxy/gtm) -D /usr/local/pgsql/(data_gtm/data_gtm_proxy)
+
+19. A datanode must be edited with it's postgresql.conf file.
+max_connections : n_coordinators * n_connections_per_coordinator
+max_prepared_transactions: same as max_connections
+pgxc_node_name : unique_ID for GTM
+port: 
+gtm_port: the port of gtm_proxy
+gtm_host: Hostname or IP of GTM-Proxy
+shared_queues:
+
+20. Configuring Coordinators
+max_connections, max_prepared_transactions, pgxc_node_name, port, gtm_port, gtm_host have same significance as above except that max_connections depends on number of max connections possible to it directly.
+
+pooler_port:
+max_pool_size: Pool = Connections pool of datanodes on Coordinator
+min_pool_size: 1
+pool_conn_keepalive:
+pool_maintenance_timeout:
+remote_query_cost: Both Are Used By Planner 
+network_byte_cost: To estimate Bandwidth/Processing based cost
+max_coordinators:
+max_datanodes:
+enfore_two_phase_commit: 
+sequence_range: used to get several values at once from GTM ( increases insert response but increases request size over the time )
+
+21. start datanode as postgres --datanode -D /usr/local/pgsql/data
+22. start coordinator as postgres --coordinator -D /usr/local/pgsql/Datanode
+
+
+
+
