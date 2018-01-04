@@ -1,22 +1,27 @@
-# Verifier uses as PC Fingerprint via 0: Processor ID, 1: BaseBoard Serial, 2: System UUID
+#!/usr/bin/env python
 
-# FFF-HASH
-
-# Create A Hash of these and send it to the postgreXL Server
+# Create a Fingerprint using Processor ID, BaseBoard Serial, System UUID
 
 import subprocess
-from random import shuffle
+from random import choices
 from hmac import new
+from string import ascii_uppercase,digits
 from hashlib import sha256
 
+# Such ID will be embedded inside application at each download the application
+# CAN BE COMPILED with this information from whatever account SPOC has logged in
+# So that it's unique to each SPOC
 
 def linux_fingerprint():
+	print('Please Wait...')
 	proc = subprocess.Popen(['sudo dmidecode'], stdout=subprocess.PIPE, shell=True)
 	output = proc.communicate()[0].split(b'\n\n')
 	processor = output[5]
 	baseboard = output[3]
 	system = output[2]
 	argsList = []
+	key = b"default"
+
 	for i in processor.split(b'\n\t'):
 		parts = i.split(b': ')
 		if parts[0] == b"ID":
@@ -32,22 +37,16 @@ def linux_fingerprint():
 	for i in system.split(b'\n\t'):
 		parts = i.split(b': ')
 		if parts[0] == b"UUID":
-			argsList.append(parts[1])
+			key = parts[1]
 			break
-	# Mind that we shall always have PID on 0th index, Serial Number at 1st and
-	# UUID at 2nd, To make it even more random we will append a Flag indicating
-	# the sequence of these arguments in computing hash
-	# Indeed we dont need to specify all three. We can just specify the starting 2
-	# third one is 3 - sum()
-	copy = argsList[:]
-	shuffle(argsList)
-	flag = ""
-	for i in range(len(copy)-1):
-		flag += str(argsList.index(copy[i]))
-	without_flag = new(key= bytes(flag,'utf-8'),msg=b''.join(argsList),digestmod=sha256)
-	fingerprint = flag+without_flag.hexdigest()
-	print(fingerprint)
 
+	fingerprint = new(key= key,msg=b''.join(argsList),digestmod=sha256).hexdigest()
 
-if __name__ == "__main__":
-	linux_fingerprint()
+	# Someone can guess that we are calculating a sha256 hash using two criterias
+	# 1st, length of correspdoning hex is 256 bit (Add a random 5 letter string in front of it)
+	# which we won't consider while matching the fingerprint
+	# 2nd, all used chars are a-zA-Z0-9 replace 0,1,2 with @ % and #
+
+	fingerprint = ''.join(choices(ascii_uppercase + digits, k=5))+\
+				fingerprint.replace('0','@').replace('1','!').replace('2','$')
+	return fingerprint
