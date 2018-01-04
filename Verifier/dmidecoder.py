@@ -3,15 +3,19 @@
 # Create a Fingerprint using Processor ID, BaseBoard Serial, System UUID
 
 import subprocess
-from random import choices
 from hmac import new
 from string import ascii_uppercase,digits
 from hashlib import sha256
-
+from random import random
 # Such ID will be embedded inside application at each download the application
 # CAN BE COMPILED with this information from whatever account SPOC has logged in
 # So that it's unique to each SPOC
-
+def randomAlnum(length):
+	num = len(ascii_uppercase+digits)
+	retval = ""
+	for i in range(length):
+		retval+=((ascii_uppercase+digits)[(int(random()*100)%(num))])
+	return retval
 def linux_fingerprint():
 	print('Please Wait...')
 	proc = subprocess.Popen(['sudo dmidecode'], stdout=subprocess.PIPE, shell=True)
@@ -47,6 +51,6 @@ def linux_fingerprint():
 	# which we won't consider while matching the fingerprint
 	# 2nd, all used chars are a-zA-Z0-9 replace 0,1,2 with @ % and #
 
-	fingerprint = ''.join(choices(ascii_uppercase + digits, k=5))+\
+	fingerprint = randomAlnum(5)+\
 				fingerprint.replace('0','@').replace('1','!').replace('2','$')
 	return fingerprint

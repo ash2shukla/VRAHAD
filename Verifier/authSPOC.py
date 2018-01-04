@@ -1,8 +1,15 @@
-from urllib3 import PoolManager
 from json import dumps
 import socket
 from dmidecoder import linux_fingerprint
+from sys import version_info
 
+py_ver = version_info[0]
+if py_ver == 3:
+	from urllib.request import Request, urlopen
+	input_stream = input
+elif py_ver == 2:
+	from urllib2 import Request, urlopen
+	input_stream = raw_input
 SPOCID = "TEST_ID"
 # Password is TEST_PASS
 
@@ -24,36 +31,43 @@ def is_connected():
 	except OSError:
 		pass
 	return False
+def to_bytes(string):
+	if py_ver == 3:
+		return bytes(string,'utf-8')
+	elif py_ver == 2:
+		return bytes(string)
+def open_url(type,url,body):
+	q = Request(url,data = to_bytes(body))
+	q.add_header('Content-Type','application/json')
+	return urlopen(q).read()
 
 def send_to_API():
 	if not is_connected():
 		print(bcolors.WARNING+"Please check Internet Connection."+bcolors.ENDC)
 		exit(0)
-	SPOCPass = input('\nPlease Enter Passphrase\n')
+	SPOCPass = input_stream('\nPlease Enter Passphrase\n')
 	# Authenticate SPOC
 	while SPOCPass == '\n':
-		SPOCPass = input('\nPlease Enter Passphrase\n')
-	http = PoolManager()
-	r = http.request('POST', 'http://localhost:8000/SPOC/',\
-					headers={'Content-Type': 'application/json'},\
-					body=dumps({"SPOCID":SPOCID,"pass":SPOCPass}))
-	if r.data == b'true':
-		r2 = http.request('POST', 'http://localhost:8000/fingerprint/',\
-						headers={'Content-Type': 'application/json'},\
-						body=dumps({"SPOCID":SPOCID,"fingerprint":linux_fingerprint()}))
-		if r2.data == b'201':
+		SPOCPass = input_stream('\nPlease Enter Passphrase\n')
+	SPOCAuth = open_url('POST','http://localhost:8000/SPOC/',dumps({"SPOCID":SPOCID,\
+					"pass":SPOCPass}))
+
+	if SPOCAuth == b'true':
+		InsertCode = open_url('POST', 'http://localhost:8000/fingerprint/'\
+						,dumps({"SPOCID":SPOCID,"fingerprint":linux_fingerprint()}))
+		if InsertCode == b'201':
 			print(bcolors.OKGREEN+"Registration Successful."+bcolors.ENDC)
-		elif r2.data == b'400':
+		elif InsertCode == b'400':
 			print("Something Went Wrong. Please Retry.")
-		elif r2.data == b'405':
+		elif InsertCode == b'405':
 			print(bcolors.FAIL+"System is already registered."+bcolors.ENDC)
 		else:
-			print("Exiting")
+			print(InsertCode)
 	else:
 		print(bcolors.FAIL+'Wrong Password. Exiting...'+bcolors.ENDC)
 
-try:
-	send_to_API()
-except:
-	if is_connected():
-		print(bcolors.WARNING+"Server Down Please Try Again Later."+bcolors.ENDC)
+#try:
+send_to_API()
+#except:
+#	if is_connected():
+#		print(bcolors.WARNING+"Server Down Please Try Again Later."+bcolors.ENDC)
