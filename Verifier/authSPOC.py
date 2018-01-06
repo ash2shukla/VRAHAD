@@ -3,6 +3,8 @@ import socket
 from dmidecoder import linux_fingerprint
 from sys import version_info
 
+base_URL = "192.168.0.13"
+
 py_ver = version_info[0]
 if py_ver == 3:
 	from urllib.request import Request, urlopen
@@ -11,7 +13,7 @@ elif py_ver == 2:
 	from urllib2 import Request, urlopen
 	input_stream = raw_input
 SPOCID = "TEST_ID"
-# Password is TEST_PASS
+# Password is TEST_PASS, Hash = 4aa82e9758818da6d4b62fe8d485749a
 
 class bcolors:
 	# For Colored Console I/O
@@ -49,11 +51,11 @@ def send_to_API():
 	# Authenticate SPOC
 	while SPOCPass == '\n':
 		SPOCPass = input_stream('\nPlease Enter Passphrase\n')
-	SPOCAuth = open_url('POST','http://localhost:8000/SPOC/',dumps({"SPOCID":SPOCID,\
+	SPOCAuth = open_url('POST','http://'+base_URL+':8000/SPOC/',dumps({"SPOCID":SPOCID,\
 					"pass":SPOCPass}))
 
 	if SPOCAuth == b'true':
-		InsertCode = open_url('POST', 'http://localhost:8000/fingerprint/'\
+		InsertCode = open_url('POST', 'http://'+base_URL+':8000/fingerprint/'\
 						,dumps({"SPOCID":SPOCID,"fingerprint":linux_fingerprint()}))
 		if InsertCode == b'201':
 			print(bcolors.OKGREEN+"Registration Successful."+bcolors.ENDC)
@@ -66,8 +68,8 @@ def send_to_API():
 	else:
 		print(bcolors.FAIL+'Wrong Password. Exiting...'+bcolors.ENDC)
 
-#try:
-send_to_API()
-#except:
-#	if is_connected():
-#		print(bcolors.WARNING+"Server Down Please Try Again Later."+bcolors.ENDC)
+try:
+	send_to_API()
+except:
+	if is_connected():
+		print(bcolors.WARNING+"Server Down Please Try Again Later."+bcolors.ENDC)
