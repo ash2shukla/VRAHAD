@@ -33,6 +33,7 @@ ALLOWED_HOSTS = ['192.168.0.13','localhost']
 INSTALLED_APPS = [
     'rest_framework',
     'fingerprint',
+	'AUA',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -84,15 +85,23 @@ WSGI_APPLICATION = 'PostgresREST.wsgi.application'
 #
 DATABASES ={
 'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db_auth_django.sqlite3')
+    },
+'keydb': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'keydb',
         'USER': 'postgres',
         'PASSWORD': 'new',
         'HOST': 'localhost',
         'PORT': '5432',
-    }
+    },
+'AUA': {
+		'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'AUA_lkey.sqlite3')
 }
-
+}
+DATABASE_ROUTERS = ['fingerprint.models.HealthCenterRouter','AUA.models.LicenseKeyRouter']
 # Password validation
 # https://docs.djangoproject.com/en/2.0/ref/settings/#auth-password-validators
 

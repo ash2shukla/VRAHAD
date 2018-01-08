@@ -12,6 +12,7 @@ if py_ver == 3:
 elif py_ver == 2:
 	from urllib2 import Request, urlopen
 	input_stream = raw_input
+
 SPOCID = "TEST_ID"
 # Password is TEST_PASS, Hash = 4aa82e9758818da6d4b62fe8d485749a
 
@@ -33,11 +34,13 @@ def is_connected():
 	except OSError:
 		pass
 	return False
+
 def to_bytes(string):
 	if py_ver == 3:
 		return bytes(string,'utf-8')
 	elif py_ver == 2:
 		return bytes(string)
+
 def open_url(type,url,body):
 	q = Request(url,data = to_bytes(body))
 	q.add_header('Content-Type','application/json')

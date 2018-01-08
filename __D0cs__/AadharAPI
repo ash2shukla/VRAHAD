@@ -15,7 +15,7 @@ Stack Used by AADHAR servers -
 	1. Aadhaar Authentication - return YES / NO based on the information provided by Customer
 	2. Aadhaar eKYC - returns user information.
 
-* Aadhar Authentication *
+* Aadhar Authentication API *
 
 3. Abbreviations -
 	AUA = Authentication User Agency ( the agency using aadhaar service )
@@ -37,7 +37,7 @@ Stack Used by AADHAR servers -
 
 	example URL would be -
 
-	https://192.168.0.13/1.6/VRAHAD/9/0/xyz_abc
+	https://192.168.0.13/1.6/VRAHAD/9/0/ASALK_TEST_KEY
 
 5. It uses XML for Input Data Format instead of JSON
 
@@ -85,7 +85,7 @@ Stack Used by AADHAR servers -
 		5. *ver = api version
 		6. *txn = transaction ID by AUA (max_len =50 [a-zA-Z0-9.-/\}:])
 			(returned as it is in response, can be used as a request ID)
-		7. *lk = license key assigned to AUA (It's basically just a JWT with Expiry 64 character)
+		7. *lk = license key assigned to AUA (It's basically just a JWT with Expiry 64 character i.e. sha256 hash probably)
 
 	Uses - (Authentication factors used by request)
 	 	1. *pi = y/n (If y then Pi part of demo element should be used in auth)
@@ -132,7 +132,7 @@ Stack Used by AADHAR servers -
 		Signature should be on the name of the AUA/ASA
 
 	Pid -
-		1. *ts - timestam at time (ISO8601 IST)
+		1. *ts - timestamp at time of generation (ISO8601 IST)
 		2. *ver = software version
 	~Demo (Demographic data)-
 		1. *lang  - Indian Language code (Hindi - 06)
@@ -208,9 +208,73 @@ Stack Used by AADHAR servers -
 
 AuthRes
 
-1. ret- y/n
-2. code- Authentication response code max_len = 40
-	if NA then retry
-3. txn- ASA specified txn id to track
-4. ts - timestamp when response was generated
-5. ~actn-
+	1. ret- y/n
+	2. code- Authentication response code max_len = 40
+		if NA then retry
+	3. txn- ASA specified txn id to track
+	4. ts - timestamp when response was generated
+	5. ~actn- max_len 5 May not exist. Used to indicate action to resident.
+	6. info - meta authentication infromation maxlen = 128 characters
+
+8. Using Synchronized Session Keys -
+
+	1. Create AES Session Key
+	2. Send Auth Request with this Key once
+	3. For subsequent requests till 4 hours
+	4. Generate a new Random Number (CSPRNG)
+	5. Generate new AES Key using the seed AES Key and the random number
+	6. Send auth request with the random number only
+	7. If response is 504 then stick to step 1
+
+* Aadhaar eKYC API *
+AUA , ASA are called KUA, KSA here (KYC UA, KYC SA)
+
+https://<host>/kyc/<ver>/<ac>/<uid[0]>/<uid[1]>/<asalk>
+
+1. Request -
+<Kyc ver="" ts="" ra="" rc="" mec="" lr="" de="" pfr="">
+	<Rad>base64 encoded fully valid Auth XML for resident</Rad>
+</Kyc>
+
+
+Kyc -
+	1. *ver- api version
+	2. *ts- timsetamp at the time of capture of authentication input value must match with PID's ts
+	3. ra- resident auth type (F,I,O,P) (Fingerprint, OTP) can be combination as well e.g. FO
+	4. rc- Y resident's consent
+	5. ~mec- explicit consent to access mobile and email by default API won't return these two
+	6. ~lr- Y/N if local language data is required
+	7. ~de- if KUA is giving permission to decrypt to KSA
+	8. ~pfr- Y/N return print format i.e. e-Aadhaar.
+
+Rad - contains b64 of Auth's XML
+txn value must start with UKC for it except it all other things are same
+
+We may or may not sign the Kyc XML
+
+2. Response -
+<Resp status="" ko="" ret="" code="" txn="" ts="" err="">encrypted and
+base64 encoded KycRes element</Resp>
+
+Decrypt it using KUA's private key
+
+<KycRes ret="" code="" txn="" ts="" ttl="" actn="" err="">
+	<Rar>base64 encoded fully valid Auth response XML for resident</Rar>
+	<UidData uid="">
+	<Poi name="" dob="" gender="" phone="" email=""/>
+	<Poa co="" house="" street="" lm="" loc="" vtc=""
+	subdist="" dist="" state="" country="" pc="" po=""/>
+	<LData lang="" name="" co="" house="" street="" lm="" loc="" vtc=""
+	subdist="" dist="" state="" country="" pc="" po=""/>
+	<Pht>base64 encoded JPEG photo of the resident</Pht>
+	<Prn type="pdf">base64 encoded signed Aadhaar letter for printing</Prn>
+	</UidData>
+	<Signature/>
+</KycRes>
+
+KycRes-
+1. ret- Y/N
+2. code- max_len = 40 (AUA must store this code corresponding to txn)
+3. txn- txn code sent
+4. ts- timestamp of response generation
+5. ttl- time to live for demographic data

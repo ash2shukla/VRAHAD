@@ -1,8 +1,8 @@
 from django.contrib import admin
-from .models import Fingerprint, HCenterSPOC, HCenterEmployee, HealthCenter
+from .models import LicenseKey
 
 class MultiDBModelAdmin(admin.ModelAdmin):
-    using = 'keydb'
+    using = 'AUA'
 
     def save_model(self, request, obj, form, change):
         obj.save(using=self.using)
@@ -19,19 +19,7 @@ class MultiDBModelAdmin(admin.ModelAdmin):
     def formfield_for_manytomany(self, db_field, request=None, **kwargs):
         return super(MultiDBModelAdmin, self).formfield_for_manytomany(db_field, request=request, using=self.using, **kwargs)
 
-class HealthCenterAdmin(MultiDBModelAdmin):
-	model = HealthCenter
+class LicenseKeyAdmin(MultiDBModelAdmin):
+	model = LicenseKey
 
-class HCenterEmployeeAdmin(MultiDBModelAdmin):
-	model = HCenterEmployee
-
-class FingerprintAdmin(MultiDBModelAdmin):
-	model = Fingerprint
-
-class HCenterSPOCAdmin(MultiDBModelAdmin):
-	model = HCenterSPOC
-
-admin.site.register(Fingerprint,FingerprintAdmin)
-admin.site.register(HCenterSPOC,HCenterSPOCAdmin)
-admin.site.register(HealthCenter,HealthCenterAdmin)
-admin.site.register(HCenterEmployee,HCenterEmployeeAdmin)
+admin.site.register(LicenseKey,LicenseKeyAdmin)

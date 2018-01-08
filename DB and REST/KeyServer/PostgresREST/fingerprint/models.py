@@ -35,3 +35,28 @@ class HCenterEmployee(models.Model):
 
 	def __str__(self):
 		return self.EmployeeID
+
+
+###### Define Router ######
+
+class HealthCenterRouter(object):
+    def db_for_read(self, model, **hints):
+        if model._meta.app_label == 'fingerprint':
+            return 'keydb'
+        return None
+
+    def db_for_write(self, model, **hints):
+        if model._meta.app_label == 'fingerprint':
+            return 'keydb'
+        return None
+
+    def allow_relation(self, obj1, obj2, **hints):
+        if obj1._meta.app_label == 'fingerprint' or \
+           obj2._meta.app_label == 'fingerprint':
+           return True
+        return None
+
+    def allow_migrate(self, db, app_label, model_name=None, **hints):
+        if app_label == 'AUA':
+            return db == 'keydb'
+        return None
