@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import LicenseKey
 
 class MultiDBModelAdmin(admin.ModelAdmin):
-    using = 'AUA'
+    using = 'ASA'
 
     def save_model(self, request, obj, form, change):
         obj.save(using=self.using)

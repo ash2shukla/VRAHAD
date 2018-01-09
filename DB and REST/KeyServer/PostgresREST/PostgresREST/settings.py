@@ -33,7 +33,7 @@ ALLOWED_HOSTS = ['192.168.0.13','localhost']
 INSTALLED_APPS = [
     'rest_framework',
     'fingerprint',
-	'AUA',
+	'ASA',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -96,12 +96,12 @@ DATABASES ={
         'HOST': 'localhost',
         'PORT': '5432',
     },
-'AUA': {
+'ASA': {
 		'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'AUA_lkey.sqlite3')
+        'NAME': os.path.join(BASE_DIR, 'ASA_lkey.sqlite3')
 }
 }
-DATABASE_ROUTERS = ['fingerprint.models.HealthCenterRouter','AUA.models.LicenseKeyRouter']
+DATABASE_ROUTERS = ['fingerprint.models.HealthCenterRouter','ASA.models.LicenseKeyRouter']
 # Password validation
 # https://docs.djangoproject.com/en/2.0/ref/settings/#auth-password-validators
 

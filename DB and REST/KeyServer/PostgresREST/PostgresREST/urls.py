@@ -1,7 +1,7 @@
 from django.conf.urls import url
 from rest_framework.urlpatterns import format_suffix_patterns
 from fingerprint import views as fviews
-from AUA import views as Aviews
+from ASA import views as Aviews
 from django.contrib import admin
 
 urlpatterns = [

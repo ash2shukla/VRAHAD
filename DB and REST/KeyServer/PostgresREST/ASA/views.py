@@ -23,7 +23,7 @@ elif py_ver == 2:
 class getKey(APIView):
 
 	def __init__(self):
-		self.AUA = "VRAHAD"
+		self.ASA = "VRAHAD"
 		self.URL = "http://localhost:8001/getLicenseKey/"
 
 	def prepareKey(self):
@@ -38,7 +38,7 @@ class getKey(APIView):
 			if (int(time()) - int(lKey.ts)) < 3600:
 				return lKey.lk
 			else:
-				lkey_from_aadhaar = loads(urlopen(Request(self.URL+self.AUA)).read().decode('utf-8'))
+				lkey_from_aadhaar = loads(urlopen(Request(self.URL+self.ASA)).read().decode('utf-8'))
 				lKey.ts = int(time())
 				lKey.lk = lkey_from_aadhaar
 				lKey.save()
@@ -68,7 +68,7 @@ class getSession(APIView):
 	# generated RSA.generate(2048).publickey().exportKey()
 
 	# The corresponding PrivateKey ie. RSA.generate(2048).exportKey()
-	# is stored in AadhaarDB in AUA table as privateKey attribute
+	# is stored in AadhaarDB in ASA table as privateKey attribute
 
 	def __init__(self):
 		self.UIDAI_key = b'-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmMQWV3320E2w93BCVm36\nOSrNpCsCclz5ggymWzZQeeYrPnQiEIrx4RKftVh+G6W7B4RXlQ6dUo3gY7ra5EYE\npeqdz1c4UT3jpBthYLtjftEiILeOsR2V/vX0x9CdkxfrTYETyY/Spr9ow8nqWQq+\nF0UykHGAteolLTPCSKQ1Ks4YgVsojKZ8Vo9T9PknHGkyGqWY9x1wS18oJ08gSRI/\nzTxz084cwGp+DcgGmXtri4pamNpw3nyS71Roz/G0OIag6nE4lh/eEEMnOY3rgQFq\nbFa1e5hKMfG424jwtipQx+IJ6aPbhK/2fc2vqAlh7tcUShGjaLJPxCONrYu4v2i9\n9wIDAQAB\n-----END PUBLIC KEY-----'

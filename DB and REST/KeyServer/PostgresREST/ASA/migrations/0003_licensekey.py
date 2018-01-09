@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('AUA', '0002_delete_licensekey'),
+        ('ASA', '0002_delete_licensekey'),
     ]
 
     operations = [

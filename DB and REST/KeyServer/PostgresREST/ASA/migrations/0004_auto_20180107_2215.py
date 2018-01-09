@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('AUA', '0003_licensekey'),
+        ('ASA', '0003_licensekey'),
     ]
 
     operations = [
