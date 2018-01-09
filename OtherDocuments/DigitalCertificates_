@@ -1,0 +1,46 @@
+Install openssl
+
+generate RSA Private Key or ECC Private Key
+
+openssl genrsa -des3 -out aua.key 2048
+
+Enter Some Passphrase to protect your key
+
+Generate CSR (Certificate Signing Request)
+
+This CSR is sent to the Certification Authorities to decide if the certificate should be issued to us or not.
+But as we are signing it ourselves we will use it on our own.
+
+openssl req -new -key aua.key -out aua.csr
+
+Generation of the certificate in x.509 format
+
+openssl x509 -req -days 365 -in aua.csr -signkey aua.key -out aua.crt
+
+
+Signing a document using this key-
+
+	from OpenSSL import crypto
+
+	singedDoc = crypto.sign(open('aua.key','rb').read(),'MESSAGE TO SIGN','sha256')
+
+	Verifying a Digitally Signed Document Programmatically :
+
+	from OpenSSL import crypto
+
+	we have two files -
+
+	1. crt (pem file)
+	2. key
+
+	crt is a publickey like thing
+
+	pkey = load_publickey(crypto.FILETYPE_PEM, open('aua.crt','rb').read())
+
+	as our crt is already wrapped in x509 we dont need to worry about it but if it was just a public key of RSA
+	then we must wrap it in a x509 header
+
+	x509 = crypto.x509()
+	x509.set_pubkey(pkey)
+
+	crypto.verify(x509, signedDoc, 'MESSAGE TO SIGN', 'sha256')

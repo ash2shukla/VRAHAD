@@ -9,6 +9,7 @@ urlpatterns = [
     url(r'^fingerprint/$', fviews.FingerprintSave.as_view()),
     url(r'^SPOC/$', fviews.HCenterSPOCVerify.as_view()),
 	url(r'^getKey/(?P<asaID>[a-zA-Z0-9_]+)$', Aviews.getKey.as_view()),
+	url(r'^getSession/(?P<asaID>[a-zA-Z0-9_]+)$',Aviews.getSession.as_view()),
     url(r'^admin/', admin.site.urls),
 ]
 

@@ -21,8 +21,8 @@ Stack Used by AADHAR servers -
 	AUA = Authentication User Agency ( the agency using aadhaar service )
 	Sub-AUA = SA
 
-	e.g. VRAHAD = AUA
-		HCenters = SA
+	e.g. VRAHAD = ASA
+		HCenters = AUA
 
 	ASA = Authentication Service Agency (AUA = ASA if capable)
 
@@ -55,7 +55,7 @@ Stack Used by AADHAR servers -
 
 	PID Block -
 
-	<Pid ts=”” ver=””>
+	<Pid ts=”” ver=””> “YYYY-MM-DDThh:mm:ss”
 		<Demo lang=””>
 		<Pi ms=”E|P” mv=”” name=”” lname=”” lmv=”” gender=”M|F|T” dob=””
 		dobt=”V|D|A” age=”” phone=”” email=””/>
@@ -117,16 +117,16 @@ Stack Used by AADHAR servers -
 			elif lot == P:
 				postalpin code
 
-	Skey - AES Session Key (256 bit key AES ECB PKCS7Padding) Whis is
+	Skey - AES Session Key (256 bit key AES ECB PKCS7Padding) Which is
 		   encrypted with 2048 bit public key given by UIDAI
 		1. ci = Certificate Identifier - certificate expiration date "YYYYMMDD"
-		2. id = ?
+		2. ki = ?
 
 	Data - PID in b64
 		type = P for protobuff else X for XML
 
 	Hmac -
-		b64 - create PID XML or Ptofobuf byte array compute SHA256 of it with key = skey
+		b64 - create PID XML or Protobuf byte array compute SHA256 of it with key = skey
 
 	Signature -
 		Signature should be on the name of the AUA/ASA
