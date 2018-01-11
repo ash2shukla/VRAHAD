@@ -1,12 +1,12 @@
 from sys import version_info
-import xml
-from json import dumps,loads
+from json import dumps,loads,load
 from time import time
-from hashlib import sha256
-from getInformation import getTID,getUDC,getIDC,getFDC,getPIP,getLOV,getSkey,\
-						getOTP,getPIN,getLicenseKey,getCertificate
+from getInformation import getTID,getUDC,getIDC,getFDC,getPIP,getLOV,\
+						getOTP,getPIN,getLicenseKey,getTxnID,getCertificate,getSkey
+from prepareRequest import prepareRequest
+from parseResponse import parseResponse
+
 from datetime import datetime
-import lxml.etree as etree
 
 py_ver = version_info[0]
 
@@ -17,7 +17,13 @@ elif py_ver == 2:
 	from urllib2 import Request, urlopen
 	from urllib import urlencode
 
+AadhaarURL = load(open('config.json'))['NirAadhaarURL']
+KeyServerURL = load(open('config.json'))['KeyServerURL']
+
 def currentISO8601():
+	'''
+	Returns current time stamp in ISO8601 format YYYY:MM:DDTHH:MM:SS
+	'''
 	now_ist = datetime.now()
 	year = str(now_ist.year)
 	month = str(now_ist.month)
@@ -38,135 +44,65 @@ def currentISO8601():
 	return date+"T"+_time
 
 def to_bytes(string):
+	'''
+	Both python version compatible bytes() function.
+	'''
 	if py_ver == 3:
 		return bytes(string,'utf-8')
 	elif py_ver == 2:
 		return bytes(string)
 
-def getAuthURL(*args):
-	URL = "http://"+('/'.join(args))
-	return URL
-
-def getAuth(XML_request,baseURL,api_ver,auaID,uid_0,uid_1,asalk):
-	r = Request(getAuthURL(baseURL,api_ver,auaID,uid_0,uid_1,asalk))
-	return urlopen(r,to_bytes(urlencode({'data':XML_request}))).read().decode('utf-8')
-
-def createNode(nodeName, elements, values,text = None):
-	node = etree.Element(nodeName)
-	for i,j in zip(elements,values):
-		if j is not None:
-			node.set(i,j)
-	if text is not None:
-		node.text = text
-	return node
-
-def prepareRequest(Auth = {},\
-					Uses = {},\
-					Tkn = {},\
-					Meta = {},\
-					Skey = {},\
-					Data = {},\
-					Demo = {},\
-					# Pid has values as timestamp ISO8601 and version i.e. 1.0
-					Pid = {},\
-					Pi = {},\
-					Pa = {},\
-					Pfa = {},\
-					Bios = {},\
-					Pv = {},\
-					asa=""):
-
-	AuthNode = createNode('Auth',Auth.keys(),Auth.values())
-	UsesNode = createNode('Uses',Uses.keys(),Uses.values())
-	TknNode = createNode('Tkn',Tkn.keys(),Tkn.values())
-	MetaNode = createNode('Meta', Meta.keys(),Meta.values())
-	SkeyNode = createNode('Skey',Skey.keys(),Skey.values(),getSkey(asa))
-	DataNode = createNode('Data',Data.keys(),Data.values())
-	PidNode = createNode('Pid',Pid.keys(),Pid.values())
-	DemoNode = createNode('Demo',Demo.keys(),Demo.values())
-	PiNode = createNode('Pi',Pi.keys(),Pi.values())
-	PaNode = createNode('Pa',Pa.keys(),Pa.values())
-	PfaNode = createNode('Pfa',Pfa.keys(),Pfa.values())
-	PvNode = createNode('Pv',Pv.keys(),Pv.values())
-	BiosNode = createNode('Bios',[],[])
-	HmacNode = createNode('Hmac',[],[])
-	SignatureNode = createNode('Signature',[],[])
-
-	for i,lst in zip(Bios.keys(),Bios.values()):
-		for j,k in lst:
-			BiosNode.append(createNode('Bio',["type","posh"],[i,j],k))
-
-
-	AuthNode.append(UsesNode)
-	AuthNode.append(TknNode)
-	AuthNode.append(MetaNode)
-	AuthNode.append(SkeyNode)
-
-	DemoNode.append(PiNode)
-	DemoNode.append(PaNode)
-	DemoNode.append(PfaNode)
-
-	PidNode.append(DemoNode)
-	PidNode.append(BiosNode)
-
-	print(etree.tostring(AuthNode,pretty_print=True).decode('utf-8'))
-	return ''
-
-def parseResponse(arg):
-	print(loads(arg))
-
-def getTxnID(uid):
-	# prepare a transaction ID based on UID and timestamp
-	return str(int(time()))+uid
-
-def AuthInit(uid="111111111111",lang="06",name=None,lname=None,gender=None,dob=None,dobt=None,age=None,phone=None,email=None,\
-			co=None,house=None,street=None,lm=None,loc=None,vtc=None,subdist=None,dist=None,state=None,pc=None,po=None,\
-			av=None,lav=None,\
-			bio_dict=None,\
+def AuthInit(uid="111111111111",lang="06",name="",lname="",gender="",dob="",dobt="",age="",phone="",email="",\
+			co="",house="",street="",lm="",loc="",vtc="",subdist="",dist="",state="",pc="",po="",\
+			tkntype="",tknvalue="",\
+			av="",lav="",\
+			bio_dict={},\
 			is_otp=False,\
-			is_pin=False):
-
-	baseURL = "localhost:8001"
-	asalk = "ASALK_TEST_KEY"
+			is_pin=False,\
+			is_asa_cert=False):
+	'''
+	Initialize Authentication.
+	Gets user input and calls prepareRequest.
+	'''
 	ver = "1.6"
 	ac = "VRAHAD" 	# auaID
 	sa = "VRAHAD" # sa = ac as we don't have subdivisons'
-	asa = "TEST_CENTER"
+	aua = "TEST_CENTER"
 	is_Fingerprint = True
 	is_Iris = True
 	lot = "G" 		# can also set it to P
 	ci = "01082019" # See OtherDocuments/DigitalCertificates for Expiry and
-	ki = None		# OtherDocuments/DigitalCertificates_ for other info
+	ki = ""			# OtherDocuments/DigitalCertificates_ for other info
 	dtype="X" 		# can be P for protobuff
 
-	if name is not None:
+	if name != "":
 		ims = "P" # ms for Pi (Identity)
 		imv = "90" # Pecentage match if partial ms for Pi
 	else:
-		ims = None
-		imv = None
+		ims = ""
+		imv = ""
 
-	if lname is not None:
+	if lname != "":
 		ilmv = "90" # Percentage match if name lname of person given in Pi
 	else:
-		ilmv = None
+		ilmv = ""
 
-	if bio_dict is not None:
+	if bio_dict is not "":
 		bt = ','.join(bio_dict.keys())
 
-	if av is not None:
+	if av is not "":
 		fams = "P" # ms for Pfa (Full Address)
 		famv = "60" # mv for Pfa
 	else:
-		fams = None
-		famv = None
+		fams = ""
+		famv = ""
 
-	if lav is not None:
+	if lav != "":
 		falmv="60" # mv for Pfa in language
 	else:
-		falmv = None
+		falmv = ""
 
-	if bio_dict is not None:
+	if bio_dict !={}:
 		bt = ','.join(bio_dict.keys())
 
 	Auth = {}
@@ -175,8 +111,12 @@ def AuthInit(uid="111111111111",lang="06",name=None,lname=None,gender=None,dob=N
 	Auth['ac'] = ac
 	Auth['sa'] = sa
 	Auth['ver'] = ver
-	Auth['txn'] = getTxnID(uid)
-	Auth['lk'] = getLicenseKey(asa)
+	Auth['txn'] = getTxnID(aua,uid)
+	Auth['lk'] = getLicenseKey(aua)
+
+	Tkn = {}
+	Tkn['type']=tkntype
+	Tkn['value']=tknvalue
 
 	Meta = {}
 	Meta['udc'] = getUDC()
@@ -235,35 +175,28 @@ def AuthInit(uid="111111111111",lang="06",name=None,lname=None,gender=None,dob=N
 	Pfa['lmv'] = falmv
 
 	Pv = {}
-	Pv['otp'] = getOTP(is_otp,baseURL,ver,ac,uid[0],uid[1],asalk)
+	Pv['otp'] = "1" if is_otp else "0"
 	Pv['pin'] = getPIN(is_pin)
 
 	Uses = {}
-	isNone = lambda lst : 'N' if all(i==None for i in lst) else 'Y'
+	isNone = lambda lst : 'N' if all(i=="" for i in lst) else 'Y'
 	Uses['pi'] = isNone(Pi.values())
 	Uses['pa'] = isNone(Pa.values())
 	Uses['pfa'] = isNone(Pfa.values())
-	Uses['bio'] = 'N' if bio_dict == None else 'Y'
+	Uses['bio'] = 'N' if bio_dict == {} else 'Y'
 	Uses['bt'] = bt
 	Uses['pin'] = 'Y' if is_pin else 'N'
 	Uses['otp'] = 'Y' if is_otp else 'N'
+	skey,EncSkey = getSkey()
 
-	request = prepareRequest(Auth = Auth,\
-							 Uses = Uses,\
-							 Meta = Meta,\
-							 Skey = Skey,\
-							 Data = Data,\
-							 Demo = Demo,\
-							 # Pid has values as timestamp ISO8601 and version i.e. 1.0
-							 Pid = Pid,\
-							 Pi = Pi,\
-							 Pa = Pa,\
-							 Pfa = Pfa,\
-							 Bios = bio_dict,\
-							 Pv = Pv,\
-							 asa=asa)
+	request = prepareRequest(Auth = Auth,Uses = Uses,Tkn=Tkn,Meta = Meta,Skey = Skey,Data = Data,\
+							 Demo = Demo,Pid = Pid,Pi = Pi,Pa = Pa,Pfa = Pfa,Bios = bio_dict,\
+							 Pv = Pv,aua=aua,is_asa_cert=is_asa_cert,skey=skey,EncSkey=EncSkey)
 
-	response = getAuth(request,baseURL,ver,ac,uid[0],uid[1],asalk)
+	# Prepare the request and send it to ASA
+	# ASA will return the response which we would parse
+	r = Request(KeyServerURL+"forwardAuthReq/",data=request)
+	response = urlopen(r).read()
 	parseResponse(response)
 
 if __name__ == "__main__":
@@ -298,6 +231,8 @@ if __name__ == "__main__":
 	is_otp= True
 	is_pin = False
 
+	is_asa_cert = False
+
 	AuthInit(uid=uid,lang=lang,name=name,lname=lname,gender=gender,dob=dob,dobt=dobt,age=age,phone=phone,email=email,\
 		co=co,house=house,street=street,loc=loc,vtc=vtc,dist=dist,state=state,pc=pc,po=po,av=av,lav=lav,\
-		bio_dict=bio_dict,is_otp=is_otp,is_pin=is_pin)
+		bio_dict=bio_dict,is_otp=is_otp,is_pin=is_pin,is_asa_cert=is_asa_cert)

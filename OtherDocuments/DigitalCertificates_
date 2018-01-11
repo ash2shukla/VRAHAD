@@ -2,9 +2,13 @@ Install openssl
 
 generate RSA Private Key or ECC Private Key
 
-openssl genrsa -des3 -out aua.key 2048
+openssl genrsa -des3 -out aua.pem 2048 (Contains the Private Key)
 
-Enter Some Passphrase to protect your key
+To generate corresponding publickey do -
+
+openssl rsa -in aua.pem -pubout > aua.pub
+
+Enter Some Passphrase to protect your key.
 
 Generate CSR (Certificate Signing Request)
 

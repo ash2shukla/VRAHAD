@@ -95,13 +95,9 @@ DATABASES ={
         'PASSWORD': 'new',
         'HOST': 'localhost',
         'PORT': '5432',
-    },
-'ASA': {
-		'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'ASA_lkey.sqlite3')
+    }
 }
-}
-DATABASE_ROUTERS = ['fingerprint.models.HealthCenterRouter','ASA.models.LicenseKeyRouter']
+DATABASE_ROUTERS = ['fingerprint.models.HealthCenterRouter']
 # Password validation
 # https://docs.djangoproject.com/en/2.0/ref/settings/#auth-password-validators
 
