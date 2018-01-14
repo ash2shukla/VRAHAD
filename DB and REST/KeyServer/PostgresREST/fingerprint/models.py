@@ -3,7 +3,7 @@ from django.contrib.postgres.fields import JSONField
 
 class HealthCenter(models.Model):
 	HealthCenterID = models.CharField(max_length=100,primary_key=True)
-	Data = JSONField(default={})
+	Data = JSONField(default={'asa_sign':False})
 
 	def __str__(self):
 		return self.HealthCenterID

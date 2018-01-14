@@ -1,0 +1,6 @@
+{
+	"NirAadhaarURL":"http://localhost:8001/",
+	"KeyServerURL":"http://localhost:8000/",
+	"PublicKey":"TEST_CENTER.public.pem",
+	"CertPath":"TEST_CENTER-AUA_CERT/TEST_CENTER-AUA-USER.cert.pem"
+}

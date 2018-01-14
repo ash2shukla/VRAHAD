@@ -1,0 +1,413 @@
+* Creating a CA and signing certificates *
+
+TL;DR:
+1. create key and certificate for point A.
+openssl genrsa -aes256 4096
+
+2. create key and certificate request(with key) for point B.
+openssl req -new -sha256 -key point-B.key -out point-B.csr
+
+3. send certificate request from point B to point A.
+
+4. point A sings it using -
+openssl x509 -req -in point-B.csr -signkey point-A.key -out point-B.crt
+or if point A is a CA then signs it using -
+openssl ca -config openssl.cnf -extensions <whatever_extension_we_want_that_has_been_specified_in_openssl.cnf> -days <how_long?> -notext -md sha256 -in point-B.csr -out point-B.crt
+
+5. send back the certificate to point-B from point-A.
+
+6. verify it using -
+openssl verify -CAfile point-A.cert point-B.cert
+
+7. For a realiable process follow the lengthy procedure below.
+
+8.
+** IMPORTANT * NEVER EVER KEEP TWO COMMON NAMES SAME ANYWHERE IN WHOLE PROCEDURE.*
+
+but mind that for being a ca there must be proper definition of openssl.cnf available.
+See above procedure for this.
+
+1. Create the Root OpenSSL.cnf
+
+Root CA will not be used to create certificates but will be used to create Intermediate CAs.
+
+create Directory as -
+
+
+Root/CA/
+mkdir csr csl private certs
+chmod 700 private
+touch index.txt
+touch index.txt.attr
+echo 1000> serial
+
+index.txt is where all of the data is stored by openssl
+
+create a configuration file for openssl
+
+Root/CA/openssl.cnf
+
+[ ca ]
+default_ca = CA_default
+
+# Directories and file locations.
+
+[ CA_default ]
+dir = <PATH_OF_ROOT_CA_FOLDER>
+certs = $dir/certs
+crl_dir = $dir/crl
+new_certs_dir = $dir/newcerts
+database = $dir/index.txt
+serial = $dir/serial
+RANDFILE = $dir/private/.rand
+
+# Root key and certificates.
+private_key = $dir/private/ca.key.pem
+certificate = $dir/certs/ca.cert.pem
+
+# Certificate Revocation list
+
+crlnumber = $dir/crlnumber
+crl = $dir/crl/ca.crl.pem
+crl_extensions = crl_ext
+default_crl_days = 30
+
+default_md = sha256
+
+name_opt = ca_default
+cert_opt = ca_default
+default_days = 365
+preserve = no
+policy = policy_strict
+
+# strict policy should be applied for all root CA signatures
+
+[ policy_strict ]
+countryName = match
+stateOrProvinceName = match
+organizationName = match
+organizationalUnitName = match
+commonName = supplied
+emailAddress = match
+
+[ policy_loose ]
+countryName             = optional
+stateOrProvinceName     = optional
+localityName            = optional
+organizationName        = optional
+organizationalUnitName  = optional
+commonName              = supplied
+emailAddress            = optional
+
+# Req options are applied where we are signing other certificates or csr.
+
+[ req ]
+default_bits = 2048
+distinguished_name = req_distinguished_name
+string_mask = utf8only
+
+default_md = sha256
+x509_exntensions = v3_ca
+
+# Information required in a CSR
+
+[ req_distinguished_name ]
+countryName = Country Name (2 letter code)
+stateOrProvinceName = State or state Or Province Name
+localityName = Locality Name
+0.organizationName = Organization Name
+organizationalUnitName = Orginaizational Unit Name
+commonName = Common Name
+emailAddress = Email Address
+
+countryName_default = IN
+
+# X509.V3 extensions parameters for Root CA
+
+[ v3_ca ]
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always,issuer
+basicConstraints = critical, CA:true
+keyUsage = critical, digitalSignature, cRLSign, keyCertSign
+
+# X509.V3 extensions for Intermediate CA
+
+[ v3_intermediate_ca ]
+subjectKeyIndentifier = hash
+authorityKeyIdentifier = keyid:always,issuer
+basicConstraints = critical, CA:true, pathlen:0
+keyUsage = critical, digitalSignature, cRLSign, keyCertSign
+
+# X509.V3 extensions for End User's certificates
+
+[ usr_cert ]
+basicConstraints = CA:FALSE
+nsCertType = client, email
+nsComment = "OpenSSL Generated Client Certificate"
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid,issuer
+keyUsage = critical, nonRepudiation, digitalSignature, keyEncipherment
+extendedKeyUsage = clientAuth, emailProtection
+
+# X509.V3 extensions for Server certificates
+
+[ server_cert ]
+basicConstraints = CA:FALSE
+nsCertType = server
+nsComment = "OpenSSL Generated Server Certificate"
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid,issuer:always
+keyUsage = critical, digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth
+
+# X509.V3 extensions for CRLs
+
+[ crl_ext ]
+authorityKeyIdentifier=keyid:always
+
+# X509.V3 extensions for Online Certificate Status Protocol
+
+[ ocsp ]
+basicConstraints=CA:FALSE
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid,issuer
+keyUsage = critical, digitalSignature
+extendedKeyUsaeg = critical, OCSP Signing
+
+2. Create Root Keypair -
+
+# create Key
+openssl genrsa -aes256 -out ca.key.pem 4096
+
+save it in private folder and chmod 400
+
+# created Root Certificate
+
+#### ALWAYS SPECIFY THE -CONFIG else openssl will default to it's configs
+
+openssl req -config openssl.cnf \
+      -key private/ca.key.pem \
+      -new -x509 -days 36500 -sha256 -extensions v3_ca \
+      -out certs/ca.cert.pem
+
+on running this command parameters specified in req_distinguished_name will be prompted
+
+chmod 444 certs/ca.cert.pem
+
+3. Vertify Root Certificate -
+
+openssl x509 -noout -text -in certs/ca.cert.pem
+
+4. Create Intermediate CA -
+
+mkdir Root/CA/intermediate
+
+mkdir certs crl csr newcerts private  in intermediate
+chmod 700 private
+touch index.txt
+touch index.txt.attr
+echo 1000 > serial
+
+# add a crlnumber file to intermediate CA directory tree to keep track of CRLs.
+
+echo 1000 > /Root/CA/intermediate/crlnumber
+
+5. Create Intermediate CA openssl.cnf -
+
+It might look like the same openssl.cnf but 5 things were changed
+dir  = /Root/CA/intermediate
+private_key = $dir/private/intermediate.key.pem
+certificate = $dir/certs/intermediate.cert.pem
+crl = $dir/crl/intermediate.crl.pem
+policy = policy_loose <- MOST IMPORTANT
+
+[ ca ]
+default_ca = CA_default
+
+[ CA_default ]
+dir               = <PATH_OF_ROOT_INTERMEDIATE_FOLDER>
+certs             = $dir/certs
+crl_dir           = $dir/crl
+new_certs_dir     = $dir/newcerts
+database          = $dir/index.txt
+serial            = $dir/serial
+RANDFILE          = $dir/private/.rand
+
+private_key       = $dir/private/intermediate.key.pem
+certificate       = $dir/certs/intermediate.cert.pem
+
+crlnumber         = $dir/crlnumber
+crl               = $dir/crl/intermediate.crl.pem
+crl_extensions    = crl_ext
+default_crl_days  = 30
+
+default_md        = sha256
+
+name_opt          = ca_default
+cert_opt          = ca_default
+default_days      = 375
+preserve          = no
+policy            = policy_loose
+
+[ policy_strict ]
+countryName             = match
+stateOrProvinceName     = match
+organizationName        = match
+organizationalUnitName  = optional
+commonName              = supplied
+emailAddress            = optional
+
+[ policy_loose ]
+countryName             = optional
+stateOrProvinceName     = optional
+localityName            = optional
+organizationName        = optional
+organizationalUnitName  = optional
+commonName              = supplied
+emailAddress            = optional
+
+[ req ]
+default_bits        = 2048
+distinguished_name  = req_distinguished_name
+string_mask         = utf8only
+
+default_md          = sha256
+
+x509_extensions     = v3_ca
+
+[ req_distinguished_name ]
+countryName                     = Country Name (2 letter code)
+stateOrProvinceName             = State or Province Name
+localityName                    = Locality Name
+0.organizationName              = Organization Name
+organizationalUnitName          = Organizational Unit Name
+commonName                      = Common Name
+emailAddress                    = Email Address
+
+countryName_default             = IN
+
+[ v3_ca ]
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always,issuer
+basicConstraints = critical, CA:true
+keyUsage = critical, digitalSignature, cRLSign, keyCertSign
+
+[ v3_intermediate_ca ]
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always,issuer
+basicConstraints = critical, CA:true, pathlen:0
+keyUsage = critical, digitalSignature, cRLSign, keyCertSign
+
+[ usr_cert ]
+basicConstraints = CA:FALSE
+nsCertType = client, email
+nsComment = "OpenSSL Generated Client Certificate"
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid,issuer
+keyUsage = critical, nonRepudiation, digitalSignature, keyEncipherment
+extendedKeyUsage = clientAuth, emailProtection
+
+[ server_cert ]
+basicConstraints = CA:FALSE
+nsCertType = server
+nsComment = "OpenSSL Generated Server Certificate"
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid,issuer:always
+keyUsage = critical, digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth
+
+[ crl_ext ]
+authorityKeyIdentifier=keyid:always
+
+[ ocsp ]
+basicConstraints = CA:FALSE
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid,issuer
+keyUsage = critical, digitalSignature
+extendedKeyUsage = critical, OCSPSigning
+
+
+6. Generate Key for Intermediate CA-
+
+openssl genrsa -aes256 -out intermediate.key.pem 4096
+
+save it in private folder and chmod 400
+
+7. Generate Intermediate Certificate Request for Root-
+
+Create CSR to get the certificate signed by Root.
+Be sure to put configuration of Intermediate CA.
+
+openssl req -config openssl.cnf -new -sha256 -key intermediate.key.pem -out intermediate.csr.pem
+
+8. Generate Intermediate Certificate-
+
+Send the CSR to Root CA
+
+execute this command on Root CA
+
+openssl ca -config openssl.cnf -extensions v3_intermediate_ca -days 3650 -notext -md sha256 -in intermediate.csr.pem -out intermediate.cert.pem
+
+save the intermdiate.cert.pem in intermediate/cert and chmod 444
+
+9. Create the chain file -
+
+When a certificate tries to get auth'ed it must be auth'ed by Root as well to keep this information intact we use chain of trust.
+
+cat intermediate.cert.pem ca.cert.pem > ca-chain.cert.pem
+
+in case we are working on a intranet system (which we are)
+We are better off installing the root's certificate on each system.
+if we do this then chain file would only require intermediate certificate
+
+10. Sign Server and Clients -
+
+Any end user or server may create their own private key using any mechanism.
+We would omit the password if the usage of certificate is intended for Servers.
+We should use 2048 length of keys for users or clients.
+
+Sign the server using usr_cert , server using server_cert extensions by intermediate_ca.
+
+Command is same as the one used by Root to verify the inter
+11. verifying a certificate -
+
+openssl verify -CAfile ca-chain.cert.pem user_or_server.cert.pem
+
+or programmatically -
+
+from OpenSSL.crypto import X509Store
+
+store = X509Store()
+store.add_cert(add_root_certificate_instance)
+store.add_cert(add_intermediate_certificate_instance)
+or
+store.add_cert(add_chain_of_trust)
+
+add your new certificate in context to the existing store
+
+store_ctx = X509StoreContext(store, certificate_to_check)
+store_ctx.verify_certificate() # if it returns None then it's okay !
+
+Else it will throw some error.
+
+
+12. Revoking a Certificate -
+
+Add A URI to config file wherever we want to show the corresponding revocation list.
+
+[ server_cert ]
+crlDistributionPoints = URI:http://example.com/intermediate.crl.pem
+
+
+Create the CRL for intermediate CA-
+
+openssl ca -config openssl.cnf -gencrl -out crl/intermediate.crl.pem
+
+To check contents of crl do -
+
+openssl crl -in crl/intermediate.crl.pem -noout -text
+
+To revoke a certificate do -
+openssl ca -config openssl.cnf -revoke certs/certname.cert.pem
+
+*AFTER REVOKING A CERTIFICATE ALWAYS RECREATE THE CRL*

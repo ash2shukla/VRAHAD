@@ -3,7 +3,7 @@ import socket
 from dmidecoder import linux_fingerprint
 from sys import version_info
 
-base_URL = "192.168.0.13"
+base_URL = "localhost"
 
 py_ver = version_info[0]
 if py_ver == 3:
@@ -58,6 +58,7 @@ def send_to_API():
 					"pass":SPOCPass}))
 
 	if SPOCAuth == b'true':
+		print('Please Wait...')
 		InsertCode = open_url('POST', 'http://'+base_URL+':8000/fingerprint/'\
 						,dumps({"SPOCID":SPOCID,"fingerprint":linux_fingerprint()}))
 		if InsertCode == b'201':

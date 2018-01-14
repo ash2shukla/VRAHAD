@@ -16,8 +16,8 @@ def randomAlnum(length):
 	for i in range(length):
 		retval+=((ascii_uppercase+digits)[(int(random()*100)%(num))])
 	return retval
+
 def linux_fingerprint():
-	print('Please Wait...')
 	proc = subprocess.Popen(['sudo dmidecode'], stdout=subprocess.PIPE, shell=True)
 	output = proc.communicate()[0].split(b'\n\n')
 	processor = output[5]

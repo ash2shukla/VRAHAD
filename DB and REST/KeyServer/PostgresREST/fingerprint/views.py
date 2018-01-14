@@ -6,6 +6,12 @@ from rest_framework.response import Response
 from rest_framework import status
 from hmac import new
 
+def FingerprintExists(fprint):
+	return Fingerprint.objects.filter(fingerprint__endswith=fprint[5:]).exists()
+
+def CanSign(fprint):
+	Fobj = Fingerprint.objects.get(fingerprint__endswith=fprint[5:])
+	return Fobj.SPOCID.HealthCenter.Data['asa_sign']
 
 class FingerprintVerify(APIView):
 	"""
