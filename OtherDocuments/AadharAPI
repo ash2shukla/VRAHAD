@@ -37,7 +37,7 @@ Stack Used by AADHAR servers -
 
 	example URL would be -
 
-	https://192.168.0.13/1.6/VRAHAD/9/0/ASALK_TEST_KEY
+	https://192.168.0.13/1.6/TEST_CENTER/9/0/ASALK_TEST_KEY
 
 5. It uses XML for Input Data Format instead of JSON
 

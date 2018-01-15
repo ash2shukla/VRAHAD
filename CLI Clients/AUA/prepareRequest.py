@@ -1,5 +1,5 @@
+from getInformation import getSkey,getCertificate,encryptWithSession
 import lxml.etree as etree
-from getInformation import getSkey,getCertificate,encryptPid,encryptHmac
 from hashlib import sha256
 
 def createNode(nodeName, elements, values,text = None):
@@ -59,14 +59,13 @@ def prepareRequest(Auth = {},Uses = {},Tkn = {},Meta = {},Skey = {},Data = {},\
 	PidNode.append(PvNode)
 
 	PidNodeBytes = etree.tostring(PidNode)
-	EncryptedPid = encryptPid(PidNodeBytes)
 
-	DataNode = createNode('Data',['type'],[dtype],EncryptedPid)
+	DataNode = createNode('Data',['type'],[dtype],encryptWithSession(skey,PidNodeBytes))
 
 	AuthNode.append(DataNode)
 
 	PidHmac = sha256(PidNodeBytes).digest()
-	HmacNode = createNode('Hmac',[],[],encryptHmac(skey,PidHmac))
+	HmacNode = createNode('Hmac',[],[],encryptWithSession(skey,PidHmac))
 
 	AuthNode.append(HmacNode)
 	AuthNode.append(SignatureNode)

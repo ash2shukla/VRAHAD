@@ -2,8 +2,7 @@ from sys import version_info
 from sys import path as sys_path
 from json import dumps,loads,load
 from time import time
-from getInformation import getTID,getUDC,getIDC,getFDC,getPIP,getLOV,\
-						getOTP,getPIN,getLicenseKey,getTxnID,getCertificate,getSkey
+from getInformation import getTID,getUDC,getIDC,getFDC,getPIP,getLOV,getOTP,getPIN,getLicenseKey,getTxnID,getCertificate,getSkey
 from prepareRequest import prepareRequest
 from parseResponse import parseResponse
 from os import path
@@ -61,9 +60,9 @@ def to_bytes(string):
 		return bytes(string)
 
 def AuthInit(uid="111111111111",lang="06",name="",lname="",gender="",dob="",dobt="",age="",phone="",email="",\
-			co="",house="",street="",lm="",loc="",vtc="",subdist="",dist="",state="",pc="",po="",\
+			co="",house="",street="",lm="",lco="",vtc="",subdist="",dist="",state="",pc="",po="",\
 			tkntype="",tknvalue="",\
-			av="",lav="",\
+			av="",lav="",otp="",\
 			bio_dict={},\
 			is_otp=False,\
 			is_pin=False,\
@@ -72,20 +71,20 @@ def AuthInit(uid="111111111111",lang="06",name="",lname="",gender="",dob="",dobt
 	Initialize Authentication.
 	Gets user input and calls prepareRequest.
 	'''
+	device =  linux_fingerprint()
 	ver = "1.6"
-	ac = "VRAHAD" 	# auaID
+	ac = "TEST_CENTER" 	# auaID
 	sa = "VRAHAD" # sa = ac as we don't have subdivisons'
 	aua = "TEST_CENTER"
 	is_Fingerprint = True
 	is_Iris = True
 	lot = "G" 		# can also set it to P
-	ci = "01082019" # See OtherDocuments/DigitalCertificates for Expiry and
 	ki = ""			# OtherDocuments/DigitalCertificates_ for other info
 	dtype="X" 		# can be P for protobuff
 
 	if name != "":
-		ims = "P" # ms for Pi (Identity)
-		imv = "90" # Pecentage match if partial ms for Pi
+		ims = "E" # ms for Pi (Identity)
+		imv = "" # Pecentage match if partial ms for Pi
 	else:
 		ims = ""
 		imv = ""
@@ -170,7 +169,7 @@ def AuthInit(uid="111111111111",lang="06",name="",lname="",gender="",dob="",dobt
 	Pa['house'] = house
 	Pa['street'] = street
 	Pa['lm'] = lm
-	Pa['loc'] = loc
+	Pa['lco'] = lco
 	Pa['vtc'] = vtc
 	Pa['subdist'] = subdist
 	Pa['dist'] = dist
@@ -186,7 +185,7 @@ def AuthInit(uid="111111111111",lang="06",name="",lname="",gender="",dob="",dobt
 	Pfa['lmv'] = falmv
 
 	Pv = {}
-	Pv['otp'] = "1" if is_otp else "0"
+	Pv['otp'] = otp
 	Pv['pin'] = getPIN(is_pin)
 
 	Uses = {}
@@ -199,7 +198,6 @@ def AuthInit(uid="111111111111",lang="06",name="",lname="",gender="",dob="",dobt
 	Uses['pin'] = 'Y' if is_pin else 'N'
 	Uses['otp'] = 'Y' if is_otp else 'N'
 	skey,EncSkey = getSkey()
-
 	request = prepareRequest(Auth = Auth,Uses = Uses,Tkn=Tkn,Meta = Meta,Skey = Skey,Data = Data,\
 							 Demo = Demo,Pid = Pid,Pi = Pi,Pa = Pa,Pfa = Pfa,Bios = bio_dict,\
 							 Pv = Pv,aua=aua,is_asa_cert=is_asa_cert,skey=skey,EncSkey=EncSkey)
@@ -209,10 +207,18 @@ def AuthInit(uid="111111111111",lang="06",name="",lname="",gender="",dob="",dobt
 	r = Request(KeyServerURL+"forwardAuthReq/",data=request)
 
 	# Send the device header along with the request
-	r.add_header('X-DEVICE',linux_fingerprint())
+	r.add_header('X-DEVICE',device)
+	r.add_header('X-AC',ac)
 	response = urlopen(r).read()
 
 	parseResponse(response)
+
+def OTPInit(is_otp,ch):
+	device =  linux_fingerprint()
+	ver = "1.6"
+	ac = "TEST_CENTER"
+	sa = "VRAHAD"
+	getOTP(is_otp,ver,ac,uid,device,sa,ch)
 
 if __name__ == "__main__":
 	uid = "903298497974"
@@ -221,19 +227,20 @@ if __name__ == "__main__":
 	# Name of the person to authenticate in Native Language
 	lname = u"आशीष शुक्ला"
 	gender = "M"
-	dob = "19960808"
+	dob = "1996"
 	# Date of birth is verified/declared/approximate V/D/A
 	dobt = "V"
-	age = "21"
+	age = "22"
 	phone="919818611161"
 	email="ash2shukla@gmail.com"
 	lang = "06"
-	co="VidyaDhar Shukla"
+	co="Vidyadhar Shukla"
 	house= "520"
 	street= "Raibareily Road"
-	loc= "Indira Nagar"
-	vtc= "Unnao City"
+	lco= u"विद्याधर शुक्ला"
+	vtc= "C"
 	dist= "Unnao"
+	subdist="Unnao City"
 	state= "Uttar Pradesh"
 	pc= "209801"
 	po= "Unnao H.O."
@@ -241,14 +248,19 @@ if __name__ == "__main__":
 	lav = u"520 इन्दिरा नगर रायबरेली रोड उन्नाव"
 	# Pass bio as a dict of type: [ (posh(key),encoded biometric (value))]
 	bio_dict = {"FMR":[("LEFT_THUMB","ABCD5"),("RIGHT_THUMB","EFGH5")],
-	"FIR":[("LEFT_THUMB","ABCD5")]}
+	"IIR":[("LEFT_IRIS","ABCDEFGH")]}
 	# bio_dict format = {"type":[("posh","value") ... ("posh","value")]}
 	is_otp= True
 	is_pin = False
 
-	# if it is true then ASA will sign the AuthRequest
-	is_asa_cert = True
 
-	AuthInit(uid=uid,lang=lang,name=name,lname=lname,gender=gender,dob=dob,dobt=dobt,age=age,phone=phone,email=email,\
-		co=co,house=house,street=street,loc=loc,vtc=vtc,dist=dist,state=state,pc=pc,po=po,av=av,lav=lav,\
+	# if it is true then ASA will sign the AuthRequest
+	is_asa_cert = False
+	#OTPInit(is_otp,'11')
+
+	# Invoke OTPInit first then ask the customer to enter the OTP somewhere,
+	# With the value of OTP Invoke the AuthInit function
+
+	AuthInit(uid=uid,otp="952075",lang=lang,subdist=subdist,name=name,lname=lname,gender=gender,dob=dob,age=age,phone=phone,email=email,\
+		co=co,house=house,street=street,lco=lco,vtc=vtc,dist=dist,state=state,pc=pc,po=po,av=av,lav=lav,\
 		bio_dict=bio_dict,is_otp=is_otp,is_pin=is_pin,is_asa_cert=is_asa_cert)

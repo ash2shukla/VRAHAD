@@ -8,14 +8,17 @@ from OpenSSL.crypto import load_certificate, FILETYPE_PEM
 from sqlalchemy.orm import sessionmaker
 from models import LicenseKey
 from Crypto.Cipher import AES
+from Crypto.PublicKey import RSA
 from Crypto import Random
 from time import time
+from lxml import etree
 
 config = load(open('config.json'))
 
 AadhaarURL = config['NirAadhaarURL']
 PublicKeyPath = config['PublicKey']
 CertPath = config['CertPath']
+KeyServerURL = config['KeyServerURL']
 
 py_ver = version_info[0]
 
@@ -26,23 +29,16 @@ elif py_ver == 2:
 	from urllib2 import Request, urlopen
 	from urllib import urlencode
 
-def encryptPid(PID="", path=PublicKeyPath):
-	'''
-	Returns encrypted PID Node.
-	'''
-	pub_obj = RSA.importKey(open(path,'r').read())
-	Enc = pub_obj.encrypt(PID,32)[0]
-	return b64encode(Enc)
-
-def encryptHmac(key="", text=""):
+def encryptWithSession(_AES256key="", text=""):
 	'''
 	Encrypts the Hmac of PID with the public key of AUA.
 	'''
-	if ((key != "") and (text !="")):
+
+	if ((_AES256key != "") and (text !="")):
 		padded = text + bytes((32 - len(text) % 32) * chr(32 - len(text) % 32),'utf-8')
 		iv = Random.new().read(AES.block_size)
-		cipher = AES.new(key, AES.MODE_CBC, iv)
-		return b64encode(iv + cipher.encrypt(text))
+		cipher = AES.new(_AES256key, AES.MODE_CBC, iv)
+		return b64encode(iv + cipher.encrypt(padded))
 	else:
 		return ""
 
@@ -139,16 +135,6 @@ def getSkey(path=PublicKeyPath):
 	Skey = pub_obj.encrypt(_AES256key,32)[0]
 	return _AES256key,b64encode(Skey)
 
-def getOTP(is_otp,ver,ac,uid_0,uid_1,asalk):
-	'''
-	Fetches latest OTP for a UID from UIDAI Server.
-	'''
-	if is_otp:
-		URL = AadhaarURL+('/'.join(['otp',ver,ac,uid_0,uid_1,asalk]))
-		print(URL)
-	else:
-		return None
-
 def getPIN(is_pin):
 	'''
 	Returns a Mock uid Pin.
@@ -158,13 +144,11 @@ def getPIN(is_pin):
 	else:
 		return ""
 
-
-
-def getLicenseKey(asa):
+def getLicenseKey(aua):
 	'''
 	Returns, updates and creates the LicenseKey lk by requesting it from UIDAI Server.
 	'''
-	url = AadhaarURL+"getLicenseKey/"+asa
+	url = AadhaarURL+"getLicenseKey/"+aua
 	engine = create_engine('sqlite:///lkd.db')
 	DBSession = sessionmaker(bind=engine)
 	session = DBSession()
@@ -188,5 +172,36 @@ def getLicenseKey(asa):
 		session.commit()
 		return lkey
 
+def createNode(nodeName, elements, values,text = None):
+	'''
+	Creates one XML node for given elements and their values and the text.
+	'''
+	node = etree.Element(nodeName)
+	for i,j in zip(elements,values):
+		if j is not None:
+			node.set(i,j)
+	if text is not None:
+		node.text = text
+	return node
+
+def getOTP(is_otp,ver,ac,uid,device,sa,ch):
+	'''
+	Fetches latest OTP for a UID from UIDAI Server.
+	'''
+	if is_otp:
+		OtpNode = createNode('Otp',['uid','tid','ac','sa','ver','txn','lk','type'],[uid,getTID(),ac,sa,ver,getTxnID(ac,uid),getLicenseKey(sa),'A'])
+		OptsNode = createNode('Opts',['ch'],[ch])
+		SignatureNode = createNode('Signature',[],[],getCertificate('raw'))
+		OtpNode.append(OptsNode)
+		OtpNode.append(SignatureNode)
+
+		r = Request(KeyServerURL+'getOTP/',data=etree.tostring(OtpNode))
+		r.add_header('X-Device',device)
+		r.add_header('X-Api-Ver',ver)
+		r.add_header('X-AC',ac)
+		r.add_header('X-UID',uid)
+		print(loads(urlopen(r).read()))
+	else:
+		return ""
 if __name__ == "__main__":
-	print(RSA.importKey(open(PublicKeyPath,'rb').read()).encrypt(b'loler',32)[0])
+	pass
