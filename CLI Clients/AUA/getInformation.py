@@ -11,6 +11,7 @@ from Crypto.Cipher import AES
 from Crypto.PublicKey import RSA
 from Crypto import Random
 from time import time
+from Utils import createNode
 from lxml import etree
 
 config = load(open('config.json'))
@@ -172,21 +173,9 @@ def getLicenseKey(aua):
 		session.commit()
 		return lkey
 
-def createNode(nodeName, elements, values,text = None):
-	'''
-	Creates one XML node for given elements and their values and the text.
-	'''
-	node = etree.Element(nodeName)
-	for i,j in zip(elements,values):
-		if j is not None:
-			node.set(i,j)
-	if text is not None:
-		node.text = text
-	return node
-
 def getOTP(is_otp,ver,ac,uid,device,sa,ch):
 	'''
-	Fetches latest OTP for a UID from UIDAI Server.
+	Invokes OTP request.
 	'''
 	if is_otp:
 		OtpNode = createNode('Otp',['uid','tid','ac','sa','ver','txn','lk','type'],[uid,getTID(),ac,sa,ver,getTxnID(ac,uid),getLicenseKey(sa),'A'])

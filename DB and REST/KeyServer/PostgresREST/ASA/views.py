@@ -25,7 +25,6 @@ class ForwardAuthReq(APIView):
 	'''
 	def __init__(self):
 		self.NirAadhaarURL = "http://localhost:8001/"
-		self.ASA = "VRAHAD"
 		self.ASALK = "ASALK_TEST_KEY"
 
 	def getCertificate(self, field, cert_path=settings.CERT_PATH):
@@ -38,7 +37,7 @@ class ForwardAuthReq(APIView):
 			return '\n'.join(cert_raw.split('\n')[1:-2])
 
 	def post(self, request):
-			# DRF parses the header as HTTP_X_DEVICE
+		# DRF parses the header as HTTP_X_DEVICE
 		device = request.META.get('HTTP_X_DEVICE')
 		ac = request.META.get('HTTP_X_AC')
 		if device is None:
@@ -78,25 +77,43 @@ class ForwardAuthReq(APIView):
 class GetOTP(APIView):
 	def __init__(self):
 		self.NirAadhaarURL = "http://localhost:8001/"
-		self.ASA = "VRAHAD"
 		self.ASALK = "ASALK_TEST_KEY"
 
 	def post(self, request):
-		# DRF parses the header as HTTP_X_DEVICE
 		device = request.META.get('HTTP_X_DEVICE')
 		version = request.META.get('HTTP_X_API_VER')
 		ac = request.META.get('HTTP_X_AC')
 		uid = request.META.get('HTTP_X_UID')
 
 		if device is None:
-			# Malicious attempt
 			return Response('MAL_ATTEMPT')
 		else:
 			if not FingerprintExists(device):
 				return Response('DEVICE_NOT_REGISTERED')
 			else:
 				# Request is authentic, log the request for future
-				# corresponding to the
 				pass
 		URL = self.NirAadhaarURL+'otp'+'/'+version+'/'+ac+'/'+uid[0]+'/'+uid[1]+'/'+self.ASALK+'/'
+		return Response(loads(urlopen(Request(URL,data=request.body)).read()))
+
+class ForwardeKYCReq(APIView):
+	def __init__(self):
+		self.NirAadhaarURL = "http://localhost:8001/"
+		self.ASALK = "ASALK_TEST_KEY"
+
+	def post(self, request):
+		device = request.META.get('HTTP_X_DEVICE')
+		version = request.META.get('HTTP_X_API_VER')
+		ac = request.META.get('HTTP_X_AC')
+		uid = request.META.get('HTTP_X_UID')
+
+		if device is None:
+			return Response('MAL_ATTEMPT')
+		else:
+			if not FingerprintExists(device):
+				return Response('DEVICE_NOT_REGISTERED')
+			else:
+				# Request is authentic, log the request for future
+				pass
+		URL = self.NirAadhaarURL+'kyc'+'/'+version+'/'+ac+'/'+uid[0]+'/'+uid[1]+'/'+self.ASALK+'/'
 		return Response(loads(urlopen(Request(URL,data=request.body)).read()))
