@@ -10,7 +10,7 @@ urlpatterns = [
     url(r'^SPOC/$', fviews.HCenterSPOCVerify.as_view()),
 	url(r'^forwardAuthReq/$',Aviews.ForwardAuthReq.as_view()),
 	url(r'^forwardeKYCReq/$',Aviews.ForwardeKYCReq.as_view()),
-	url(r'^getOTP/$',Aviews.GetOTP.as_view()),
+	url(r'^forwardOTPReq/$',Aviews.ForwardOTPReq.as_view()),
     url(r'^admin/', admin.site.urls),
 ]
 

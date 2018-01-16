@@ -74,7 +74,7 @@ class ForwardAuthReq(APIView):
 		r = Request(URL,data=body)
 		return Response(loads(urlopen(r).read().decode('utf-8')))
 
-class GetOTP(APIView):
+class ForwardOTPReq(APIView):
 	def __init__(self):
 		self.NirAadhaarURL = "http://localhost:8001/"
 		self.ASALK = "ASALK_TEST_KEY"

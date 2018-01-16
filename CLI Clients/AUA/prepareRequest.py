@@ -1,10 +1,7 @@
 from sys import version_info
 from sys import path as sys_path
-from json import dumps,loads,load
-from time import time
-from prepareRequest import prepareRequest
+from json import load
 from getInformation import *
-from parseResponse import parseResponse
 from os import path
 from lxml import etree
 from hashlib import sha256
@@ -17,22 +14,7 @@ sys_path.append(master_dir)
 from SystemVerification.dmidecoder import linux_fingerprint
 from urllib.request import Request, urlopen
 from urllib.parse import urlencode
-
-ver = "1.6"
-ac = "TEST_CENTER" 	# auaID
-sa = "VRAHAD" # sa = ac as we don't have subdivisons'
-aua = "TEST_CENTER"
-is_Fingerprint = True
-is_Iris = True
-lot = "G" 		# can also set it to P
-ki = ""			# OtherDocuments/DigitalCertificates_ for other info
-dtype="X"
-is_otp =True
-is_pin = False
-is_asa_cert= False
-tkntype= ""
-tknvalue = ""
-lot = "G"
+from config import *
 
 # create the Skey and save it for session
 skey,EncryptedSkey = getSkey()
@@ -186,11 +168,15 @@ def createBiosNode(bio_dict):
 def createSkeyNode():
 		return createNode('Skey',['ci'],[getCertificate('expiry')], EncryptedSkey)
 
-def createAuthNode(JSONInput,NodeList):
+def createAuthNode(JSONInput,NodeList,for_KYC):
 	uid = JSONInput['uid']
 
 	elements = ['uid','tid','ac','sa','ver','txn','lk']
-	values = [uid,getTID(),aua,sa,ver,getTxnID(aua,uid),getLicenseKey(aua)]
+
+	# Transaction ID must start with UKC: namespace for_KYC transactions
+	txn = "UKC:"+getTxnID(aua,uid) if for_KYC else getTxnID(aua,uid)
+
+	values = [uid,getTID(),aua,sa,ver,txn,getLicenseKey(aua)]
 
 	AuthNode = createNode('AuthNode',elements,values)
 
@@ -198,7 +184,7 @@ def createAuthNode(JSONInput,NodeList):
 
 	return AuthNode
 
-def populateAuthXML(JSONInput,otp=""):
+def populateAuthXML(JSONInput,otp="",for_KYC=False):
 	# JSONInput must be in the same form as mentioned in Input.json
 	# If some fields do not exist then simply put "" instead of value
 
@@ -220,21 +206,63 @@ def populateAuthXML(JSONInput,otp=""):
 	HmacNode = createHmacNode(PIDNode)
 	SkeyNode = createSkeyNode()
 
-	AuthNode = createAuthNode(JSONInput,[UsesNode,TknNode,MetaNode,SkeyNode,DataNode,HmacNode,SignatureNode])
+	AuthNode = createAuthNode(JSONInput,[UsesNode,TknNode,MetaNode,SkeyNode,DataNode,HmacNode,SignatureNode],for_KYC)
 	return etree.tostring(AuthNode)
 
 def AuthRes(AuthXML):
 	# Prepare the request and send it to ASA
 	# ASA will return the response which we would parse
-	device =  linux_fingerprint()
 	r = Request(KeyServerURL+"forwardAuthReq/",data=AuthXML)
 
 	# Send the device header along with the request
 	r.add_header('X-DEVICE',device)
 	r.add_header('X-AC',ac)
-	response = urlopen(r).read()
+	response = loads(urlopen(r).read())
 
-	parseResponse(response)
+	return response
+
+#################################### For OTP ###################################
+
+def populateOTPXML(ch,uid):
+	OtpNode = createNode('Otp',['uid','tid','ac','sa','ver','txn','lk','type'],[uid,getTID(),ac,sa,ver,getTxnID(ac,uid),getLicenseKey(sa),'A'])
+	OptsNode = createNode('Opts',['ch'],[ch])
+	SignatureNode = createNode('Signature',[],[],getCertificate('raw'))
+	OtpNode.append(OptsNode)
+	OtpNode.append(SignatureNode)
+
+	return etree.tostring(OtpNode)
+
+def OTPRes(uid,OTPXML):
+	'''
+	Invokes OTP request.
+	'''
+	r = Request(KeyServerURL+'forwardOTPReq/',data=OTPXML)
+	r.add_header('X-Device',device)
+	r.add_header('X-Api-Ver',ver)
+	r.add_header('X-AC',ac)
+	r.add_header('X-UID',uid)
+
+	response = loads(urlopen(r).read())
+	return response
+
+#################################### For eKYC ##################################
+
+def populateKYCXML(AuthXMLData):
+	elements = ['ver','ts','ra','rc','mec','lr','de','pfr']
+	values = [ekyc_ver,currentISO8601(), ra,rc,mec,lr,de,pfr]
+	return etree.tostring(createNode('Kyc', elements, values,AuthXMLData))
+
+def KycRes(KYCXML,uid):
+	r = Request(KeyServerURL+"forwardeKYCReq/",data=KYCXML)
+
+	r.add_header('X-Device',device)
+	r.add_header('X-Api-Ver',ekyc_ver)
+	r.add_header('X-AC',ac)
+	r.add_header('X-UID',uid)
+
+
+	response = loads(urlopen(r).read())
+	return response
 
 if __name__ == "__main__":
 	AuthXML = populateAuthXML(load(open('Input.json','r')))

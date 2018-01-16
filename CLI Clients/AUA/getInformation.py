@@ -13,13 +13,7 @@ from Crypto import Random
 from time import time
 from Utils import createNode
 from lxml import etree
-
-config = load(open('config.json'))
-
-AadhaarURL = config['NirAadhaarURL']
-PublicKeyPath = config['PublicKey']
-CertPath = config['CertPath']
-KeyServerURL = config['KeyServerURL']
+from config import *
 
 py_ver = version_info[0]
 
@@ -149,7 +143,7 @@ def getLicenseKey(aua):
 	'''
 	Returns, updates and creates the LicenseKey lk by requesting it from UIDAI Server.
 	'''
-	url = AadhaarURL+"getLicenseKey/"+aua
+	url = NirAadhaarURL+"getLicenseKey/"+aua
 	engine = create_engine('sqlite:///lkd.db')
 	DBSession = sessionmaker(bind=engine)
 	session = DBSession()
@@ -173,24 +167,6 @@ def getLicenseKey(aua):
 		session.commit()
 		return lkey
 
-def getOTP(is_otp,ver,ac,uid,device,sa,ch):
-	'''
-	Invokes OTP request.
-	'''
-	if is_otp:
-		OtpNode = createNode('Otp',['uid','tid','ac','sa','ver','txn','lk','type'],[uid,getTID(),ac,sa,ver,getTxnID(ac,uid),getLicenseKey(sa),'A'])
-		OptsNode = createNode('Opts',['ch'],[ch])
-		SignatureNode = createNode('Signature',[],[],getCertificate('raw'))
-		OtpNode.append(OptsNode)
-		OtpNode.append(SignatureNode)
 
-		r = Request(KeyServerURL+'getOTP/',data=etree.tostring(OtpNode))
-		r.add_header('X-Device',device)
-		r.add_header('X-Api-Ver',ver)
-		r.add_header('X-AC',ac)
-		r.add_header('X-UID',uid)
-		print(loads(urlopen(r).read()))
-	else:
-		return ""
 if __name__ == "__main__":
 	pass

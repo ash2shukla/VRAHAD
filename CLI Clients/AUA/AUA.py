@@ -1,42 +1,44 @@
 from sys import version_info
-from sys import path as sys_path
-from json import dumps,loads,load
-from time import time
-from
+from json import load
 from os import path
 from lxml import etree
 from hashlib import sha256
-from datetime import datetime
-from prepareRequest import populateAuthXML, AuthRes
+from prepareRequest import populateAuthXML, populateKYCXML, populateOTPXML
+from prepareRequest import AuthRes, KycRes, OTPRes
+from config import *
+from base64 import b64encode,b64decode
+from lxml import etree
+from parseResponse import parseResponse
 
-
-master_dir = path.abspath(path.join(__file__,'..','..'))
-sys_path.append(master_dir)
-
-from SystemVerification.dmidecoder import linux_fingerprint
 from urllib.request import Request, urlopen
 from urllib.parse import urlencode
 
+# Use RAWresponse for whole XML
 
-config = load(open('config.json'))
+def AuthInit(JSONInfo,otp=""):
+	AuthXML = populateAuthXML(JSONInfo,otp)
+	RAWresponse = AuthRes(AuthXML)
 
-AadhaarURL = config['NirAadhaarURL']
-KeyServerURL = config['KeyServerURL']
+	parseResponse('AUTH',RAWresponse)
 
-def AuthInit(JSONInfo):
-	AuthXML = populateAuthXML(JSONInfo)
-	AuthRes(AuthXML)
+def OTPInit(ch,uid):
+	OTPXML = populateOTPXML(ch,uid)
+	RAWresponse = OTPRes(uid,OTPXML)
 
-def OTPInit(is_otp,ch):
-	device =  linux_fingerprint()
-	ver = "1.6"
-	ac = "TEST_CENTER"
-	sa = "VRAHAD"
-	getOTP(is_otp,ver,ac,uid,device,sa,ch)
+	parseResponse('OTP',RAWresponse)
 
-def eKYCInit():
-	pass
+def eKYCInit(JSONInfo,otp=""):
+	AuthXML = populateAuthXML(JSONInfo,otp,for_KYC=True)
+	AuthXMLb64 = b64encode(AuthXML)
+	KYCXML = populateKYCXML(AuthXMLb64)
+	RAWresponse = KycRes(KYCXML,JSONInfo['uid'])
 
+	print(RAWresponse)
+
+	parseResponse('KYC', RAWresponse)
 
 if __name__ == "__main__":
-	AuthInit(load(open('Input.json','r')))
+	JSONInfo = load(open('Input.json','r'))
+	#OTPInit("11",JSONInfo['uid'])
+	#AuthInit(JSONInfo,"402521")
+	eKYCInit(JSONInfo,"402521")
