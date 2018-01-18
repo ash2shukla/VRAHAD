@@ -1,20 +1,16 @@
 from sys import version_info
 from sys import path as sys_path
 from json import load
-from getInformation import *
 from os import path
 from lxml import etree
 from hashlib import sha256
-from Utils import *
-
-
-master_dir = path.abspath(path.join(__file__,'..','..'))
-sys_path.append(master_dir)
-
-from SystemVerification.dmidecoder import linux_fingerprint
-from urllib.request import Request, urlopen
 from urllib.parse import urlencode
-from config import *
+from urllib.request import Request, urlopen
+
+from .Utils import *
+from .getInformation import *
+from .config import *
+
 
 # create the Skey and save it for session
 skey,EncryptedSkey = getSkey()
@@ -224,7 +220,7 @@ def AuthRes(AuthXML):
 #################################### For OTP ###################################
 
 def populateOTPXML(ch,uid):
-	OtpNode = createNode('Otp',['uid','tid','ac','sa','ver','txn','lk','type'],[uid,getTID(),ac,sa,ver,getTxnID(ac,uid),getLicenseKey(sa),'A'])
+	OtpNode = createNode('Otp',['uid','tid','ac','sa','ver','txn','lk','type'],[uid,getTID(),ac,sa,ver,getTxnID(ac,uid),getLicenseKey(ac),'A'])
 	OptsNode = createNode('Opts',['ch'],[ch])
 	SignatureNode = createNode('Signature',[],[],getCertificate('raw'))
 	OtpNode.append(OptsNode)

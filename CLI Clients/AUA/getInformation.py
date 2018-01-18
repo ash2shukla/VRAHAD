@@ -1,4 +1,4 @@
-from sys import version_info
+from sys import exit
 from os import urandom
 from base64 import b64encode,b64decode
 from json import dumps,loads,load
@@ -6,23 +6,20 @@ from Crypto.PublicKey import RSA
 from sqlalchemy import create_engine
 from OpenSSL.crypto import load_certificate, FILETYPE_PEM
 from sqlalchemy.orm import sessionmaker
-from models import LicenseKey
 from Crypto.Cipher import AES
 from Crypto.PublicKey import RSA
 from Crypto import Random
 from time import time
-from Utils import createNode
 from lxml import etree
-from config import *
+from urllib.request import Request, urlopen
+from urllib.parse import urlencode
+from sqlalchemy.orm.exc import NoResultFound
 
-py_ver = version_info[0]
+from .config import *
+from .Utils import createNode
+from .models import LicenseKey, InitDB
 
-if py_ver == 3:
-	from urllib.request import Request, urlopen
-	from urllib.parse import urlencode
-elif py_ver == 2:
-	from urllib2 import Request, urlopen
-	from urllib import urlencode
+
 
 def encryptWithSession(_AES256key="", text=""):
 	'''
@@ -144,10 +141,15 @@ def getLicenseKey(aua):
 	Returns, updates and creates the LicenseKey lk by requesting it from UIDAI Server.
 	'''
 	url = NirAadhaarURL+"getLicenseKey/"+aua
-	engine = create_engine('sqlite:///lkd.db')
+	engine = create_engine('sqlite:///'+DBPath)
+	InitDB()
 	DBSession = sessionmaker(bind=engine)
 	session = DBSession()
-	lKey = session.query(LicenseKey).one()
+	try:
+		lKey = session.query(LicenseKey).order_by(LicenseKey.ts).first()
+	except NoResultFound as e:
+		lKey = None
+
 	if lKey:
 		# If licenseKey exists then retrieve it.
 		# check if it is valid
@@ -155,7 +157,11 @@ def getLicenseKey(aua):
 			return lKey.lk
 		else:
 			lkey = loads(urlopen(Request(url)).read().decode('utf-8'))
-			lKey.ts = int(time())
+			if lkey == 'NA_AUA':
+				print('AUA_GET_LICENSE_FAILED.AUA_NOT_REGISTERED')
+				# Issue an exit as all other auths depend on LicenseKey.
+				# If this fails there is no chance that Authentication will complete
+				exit(0)
 			lKey.lk = lkey
 			session.commit()
 			return lkey
@@ -163,6 +169,9 @@ def getLicenseKey(aua):
 		# If licenseKey does not exist then retrieve it from aadhaar server
 		# and save it in DB and return it
 		lkey = loads(urlopen(Request(url)).read().decode('utf-8'))
+		if lkey == 'NA_AUA':
+			print('AUA_GET_LICENSE_FAILED.AUA_NOT_REGISTERED')
+			exit(0)
 		session.add(LicenseKey(lk = lkey , ts=int(time())))
 		session.commit()
 		return lkey

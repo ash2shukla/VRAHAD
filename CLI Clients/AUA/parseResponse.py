@@ -1,8 +1,9 @@
 from json import loads
 from lxml import etree
-from prepareRequest import skey
 from Crypto.Cipher import AES
 from base64 import b64decode
+
+from .prepareRequest import skey
 
 def decryptWithSession(data):
 	iv = skey[:AES.block_size]
@@ -22,20 +23,16 @@ def parseResponse(_type, ResponseXML):
 	if _type == "AUTH":
 		if ResponseXMLNode.get('code') != "OK":
 			print(ResponseXMLNode.get('code'), ResponseXMLNode.get('err'))
-		else:
-			return ResponseXMLNode
+		return ResponseXMLNode
 
 	elif _type == "OTP":
 		if ResponseXMLNode.get('code') != "OK":
 			print(ResponseXMLNode.get('code'), ResponseXMLNode.get('err'))
-			return {}
-		else:
-			return ResponseXMLNode
+		return ResponseXMLNode
 
 	elif _type == "KYC":
 		if ResponseXMLNode.get('code') != "OK":
 			print(ResponseXMLNode.get('code'), ResponseXMLNode.get('err'))
-		else:
-			response = decryptWithSession(ResponseXMLNode.text).split(b'</KycRes>')[0]+b'</KycRes>'
-			KycResNode = etree.fromstring(response)
-			return KycResNode
+		response = decryptWithSession(ResponseXMLNode.text).split(b'</KycRes>')[0]+b'</KycRes>'
+		KycResNode = etree.fromstring(response)
+		return KycResNode

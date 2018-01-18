@@ -3,12 +3,13 @@ from json import load
 from os import path
 from lxml import etree
 from hashlib import sha256
-from prepareRequest import populateAuthXML, populateKYCXML, populateOTPXML
-from prepareRequest import AuthRes, KycRes, OTPRes
-from config import *
 from base64 import b64encode,b64decode
 from lxml import etree
-from parseResponse import parseResponse
+
+from .parseResponse import parseResponse
+from .prepareRequest import populateAuthXML, populateKYCXML, populateOTPXML
+from .prepareRequest import AuthRes, KycRes, OTPRes
+from .config import *
 
 from urllib.request import Request, urlopen
 from urllib.parse import urlencode
@@ -19,13 +20,13 @@ def AuthInit(JSONInfo,otp=""):
 	AuthXML = populateAuthXML(JSONInfo,otp)
 	RAWresponse = AuthRes(AuthXML)
 
-	parseResponse('AUTH',RAWresponse)
+	return parseResponse('AUTH',RAWresponse)
 
 def OTPInit(ch,uid):
 	OTPXML = populateOTPXML(ch,uid)
 	RAWresponse = OTPRes(uid,OTPXML)
 
-	parseResponse('OTP',RAWresponse)
+	return parseResponse('OTP',RAWresponse)
 
 def eKYCInit(JSONInfo,otp=""):
 	AuthXML = populateAuthXML(JSONInfo,otp,for_KYC=True)
@@ -33,9 +34,11 @@ def eKYCInit(JSONInfo,otp=""):
 	KYCXML = populateKYCXML(AuthXMLb64)
 	RAWresponse = KycRes(KYCXML,JSONInfo['uid'])
 
-	print(RAWresponse)
+	return parseResponse('KYC', RAWresponse)
 
-	parseResponse('KYC', RAWresponse)
+def GetAttribute(ResponseXMLNode, attribute):
+	pass
+
 
 if __name__ == "__main__":
 	JSONInfo = load(open('Input.json','r'))
