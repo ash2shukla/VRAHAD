@@ -9,6 +9,7 @@ from SystemVerification.dmidecoder import linux_fingerprint
 
 device = linux_fingerprint() # To verify the request using Fingerprint on VRAHAD ASA
 
+SessionServerURL = "http://localhost:8002/" # Session Server port 
 NirAadhaarURL = "http://localhost:8001/" # NirAadhaar's port
 KeyServerURL = "http://localhost:8000/" # ASA's URL
 PublicKeyPath = path.abspath(path.join(__file__,'..',"TEST_CENTER.public.pem")) # Public Key provided by NirAadhaar
@@ -31,7 +32,6 @@ is_pin = False # DO NOT SET TRUE, PIN HAS NO MEANINGS, ITS FOR INTERNAL PURPOSES
 is_asa_cert= False # DO NOT SET TRUE, ASA WONT SIGN INSTEAD OF AUA
 tkntype= "" # Token usage is ambiguous and not documented thus not implemented in NirAadhaar for now.
 tknvalue = "" # Same applies for Token Value
-lot = "G" # Location Type can be either "G" or "P" depending on whatever we have registered with.
 
 ############################# VARIABLES FOR EKYC ##############################
 

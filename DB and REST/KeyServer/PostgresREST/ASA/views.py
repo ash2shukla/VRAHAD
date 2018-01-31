@@ -1,4 +1,4 @@
-from fingerprint.views import FingerprintExists,CanSign
+from HCenter.views import FingerprintExists,CanSign
 from json import loads,dumps
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -24,8 +24,8 @@ class ForwardAuthReq(APIView):
 	Returns the response of Aadhaar Server to ASA
 	'''
 	def __init__(self):
-		self.NirAadhaarURL = "http://localhost:8001/"
-		self.ASALK = "ASALK_TEST_KEY"
+		self.NirAadhaarURL = settings.NIRAADHAARURL
+		self.ASALK = settings.ASALK
 
 	def getCertificate(self, field, cert_path=settings.CERT_PATH):
 		relpath = (path.join(path.dirname(__file__),cert_path))

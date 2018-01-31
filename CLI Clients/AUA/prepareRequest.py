@@ -58,12 +58,14 @@ def createPiNode(JSONInput):
 	return node
 
 def createPaNode(JSONInput):
-	elements = ['ms']
-	values = ["E"]
+	elements = []
+	values = []
 
 	elements_from_json = ['co','house','street','lm','lco','vtc','subdist','dist','state','pc','po']
 
-	[ (elements.append(i),values.append(JSONInput[i])) for i in elements_from_json ]
+	if not isNone([ (elements.append(i),values.append(JSONInput[i])) for i in elements_from_json ]):
+		elements.append('ms')
+		values.append('E')
 
 	node = createNode('Pa',elements,values)
 
@@ -209,7 +211,6 @@ def AuthRes(AuthXML):
 	# Prepare the request and send it to ASA
 	# ASA will return the response which we would parse
 	r = Request(KeyServerURL+"forwardAuthReq/",data=AuthXML)
-
 	# Send the device header along with the request
 	r.add_header('X-DEVICE',device)
 	r.add_header('X-AC',ac)

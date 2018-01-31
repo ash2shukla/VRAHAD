@@ -20,6 +20,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 ######################### USER DEFINED VARIABLES #############################
 CERT_PATH = "Vrahad-SVR-ASA_CERT/VRAHAD-SVR-ASA-SERVER.cert.pem"
+ASALK  = "ASALK_TEST_KEY"
+NIRAADHAARURL = "http://localhost:8001/"
 ##############################################################################
 
 # Quick-start development settings - unsuitable for production
@@ -38,7 +40,7 @@ ALLOWED_HOSTS = ['192.168.0.13','localhost']
 
 INSTALLED_APPS = [
     'rest_framework',
-    'fingerprint',
+    'HCenter',
 	'ASA',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -103,7 +105,7 @@ DATABASES ={
         'PORT': '5432',
     }
 }
-DATABASE_ROUTERS = ['fingerprint.models.HealthCenterRouter']
+DATABASE_ROUTERS = ['HCenter.models.HealthCenterRouter']
 # Password validation
 # https://docs.djangoproject.com/en/2.0/ref/settings/#auth-password-validators
 
@@ -141,3 +143,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 
 STATIC_URL = '/static/'
+
+from redis import StrictRedis
+
+REDIS_CONN = StrictRedis('localhost',6379,db=0)

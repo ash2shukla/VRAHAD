@@ -23,7 +23,5 @@
 	"av" :"",
 	"lav" :"",
 
-	"bio_dict" : {
-					"BIO_TYPE":{"POSH":"VALUE","":""}
-				}
+	"bio_dict" : {}
 }

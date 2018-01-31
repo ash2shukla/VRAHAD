@@ -4,21 +4,21 @@
 
 import subprocess
 from hmac import new
-from string import ascii_uppercase,digits
+from string import ascii_lowercase,digits
 from hashlib import sha256
 from random import random
 # Such ID will be embedded inside application at each download the application
 # CAN BE COMPILED with this information from whatever account SPOC has logged in
 # So that it's unique to each SPOC
 def randomAlnum(length):
-	num = len(ascii_uppercase+digits)
+	num = len(ascii_lowercase+digits)
 	retval = ""
 	for i in range(length):
-		retval+=((ascii_uppercase+digits)[(int(random()*100)%(num))])
+		retval+=((ascii_lowercase+digits)[(int(random()*100)%(num))])
 	return retval
 
 def linux_fingerprint():
-	proc = subprocess.Popen(['sudo dmidecode'], stdout=subprocess.PIPE, shell=True)
+	proc = subprocess.Popen(['sudo /home/omnipotent/.dmidecode.sh'], stdout=subprocess.PIPE, stdin= subprocess.PIPE, shell=True)
 	output = proc.communicate()[0].split(b'\n\n')
 	processor = output[5]
 	baseboard = output[3]
@@ -50,7 +50,11 @@ def linux_fingerprint():
 	# 1st, length of correspdoning hex is 256 bit (Add a random 5 letter string in front of it)
 	# which we won't consider while matching the fingerprint
 	# 2nd, all used chars are a-zA-Z0-9 replace 0,1,2 with @ % and #
-
-	fingerprint = randomAlnum(5)+\
-				fingerprint.replace('0','@').replace('1','!').replace('2','$')
+	random_5 = randomAlnum(5)
+	fingerprint = fingerprint.replace('0','@').replace('1','!').replace('2','$')
+	index = int((random()*10)%9+1)
+	fingerprint = fingerprint[:index]+random_5+fingerprint[index:]+str(index)
 	return fingerprint
+
+if __name__ == "__main__":
+	print(linux_fingerprint())
