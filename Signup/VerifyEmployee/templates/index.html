@@ -1,0 +1,71 @@
+{% load staticfiles %}
+<title>Employee Login</title>
+<link type="text/css" rel="stylesheet" href="{% static 'materialize.css' %}"  media="screen,projection"/>
+<script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+<script type="text/javascript" src="{% static 'materialize.js' %}"></script>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<style>
+.center-div
+{
+     position: relative;
+     transform: perspective(1px) translateY(50%);
+}
+.preloader-background {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: rgba(0, 0, 0, 0.9);
+	
+	position: fixed;
+	z-index: 100;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;	
+}
+</style>
+
+<div class="preloader-background" id="preloader">
+	<div class="preloader-wrapper big active">
+    <div class="spinner-layer">
+      <div class="circle-clipper left">
+        <div class="circle"></div>
+      </div><div class="gap-patch">
+        <div class="circle"></div>
+      </div><div class="circle-clipper right">
+        <div class="circle"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="visibility: hidden" id="isfail" value={{isfail}}></div>
+
+<div class="container">
+<div class="row center-div">
+    <div class="card col s8 offset-s2">
+        <div class="card-content">
+           		<form method="post">
+					{% csrf_token %}
+					<label for="eid">Employee ID</label>
+					<input type="text" name="EID" id="eid" placeholder="EID"/>
+					<label for="pass">Password</label>	
+					<input type="password" name="pass" id="pass" placeholder="Password"/>
+					<input type="submit" id="submit" class="btn" value="submit">
+				</form>
+        	</div>
+    	</div>
+	</div>
+</div>
+
+<script>
+	$(document).ready(function(){
+		if($('#isfail').attr('value')=='1'){
+			Materialize.toast('Send OTP Fail.',4000);
+		}
+		$("#preloader").css({visibility: "hidden"});
+		$("#submit").click(function(){
+			$("#preloader").css({visibility: "visible"});
+		});
+	});
+</script>

@@ -23,6 +23,10 @@ def AuthInit(JSONInfo,otp=""):
 	return parseResponse('AUTH',RAWresponse)
 
 def OTPInit(ch,uid):
+	"""
+	ch = 00 01 10 11, <phone><email>
+	uid
+	"""
 	OTPXML = populateOTPXML(ch,uid)
 	RAWresponse = OTPRes(uid,OTPXML)
 

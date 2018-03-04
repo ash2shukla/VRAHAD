@@ -1,0 +1,10 @@
+{
+  "expo": {
+	"name": "BioSample",
+    "sdkVersion": "25.0.0",
+	"android": {
+      "package": "com.biometricSample.bioSample"
+    },
+    "icon": "./assets/finger_print.png",
+  }
+}

@@ -1,0 +1,34 @@
+{% load staticfiles %}
+
+<link type="text/css" rel="stylesheet" href="{% static 'materialize.css' %}"  media="screen,projection"/>
+<script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+<script type="text/javascript" src="{% static 'materialize.js' %}"></script>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<style>
+.center-div
+{
+     position: relative;
+     transform: perspective(1px) translateY(50%);
+}
+</style>
+
+<div class="container">
+<div class="row center-div">
+    <div class="card col s8 offset-s2">
+        <div class="card-content">
+           	<form method="post">
+				{% csrf_token %}
+				<input type="number" name="OTP" placeholder="OTP"/>
+				<input type="hidden" value={{tok}} name="tok"/>
+				<input type="hidden" value={{k}} name="k"/>
+				<div class="row">
+				<input type="submit" onclick="" class="btn col s4" value="Submit"/>
+				</div>
+			</form>
+        </div>
+    </div>
+    <div class="col s2">
+    	<iframe width="250" height="250"  src="https://lottiefiles.com/iframe/663-fingerprint-scan" frameborder="0"></iframe>
+    </div>
+</div>
+</div>
