@@ -1,0 +1,82 @@
+{% load staticfiles %}
+<link type="text/css" rel="stylesheet" href="{% static 'materialize.css' %}"  media="screen,projection"/>
+<script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script type="text/javascript" src="{% static 'materialize.js' %}"></script>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<style>
+.center-div
+{
+     position: relative;
+     transform: perspective(1px) translateY(30%);
+}
+.preloader-background {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: rgba(0, 0, 0, 0.9);
+	
+	position: fixed;
+	z-index: 100;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;	
+}
+</style>
+<div style="visibility: hidden" id="isfail" value ={{isfail}}></div>
+<div class="preloader-background" id="preloader">
+	<div class="preloader-wrapper big active">
+    <div class="spinner-layer">
+      <div class="circle-clipper left">
+        <div class="circle"></div>
+      </div><div class="gap-patch">
+        <div class="circle"></div>
+      </div><div class="circle-clipper right">
+        <div class="circle"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+<div class="row center-div">
+    <div class="card col s8 offset-s2">
+        <div class="card-content">
+           	<form method="post">
+				{% csrf_token %}
+				<label for="uid">Aadhaar Number</label>
+				<input type="number" id="uid" name="uid" placeholder="UID"/>
+				<input type="button" class="btn" id="btn" value="send otp"><br><br>
+				<label for="otp">One Time Password</label>
+				<input type="number" id="otp" name="otp" placeholder = "OTP"/>
+				<input type="submit" class="btn"/>
+			</form>
+        </div>
+    </div>
+    <div class="col s2">
+    	<iframe width="300" height="300" id="lottie" src="" scrolling="no" frameborder="0"></iframe>
+    </div>
+</div>
+</div>
+
+<script>
+	$(document).ready(function(){
+    if ($('#isfail').attr('value') == '1'){
+      Materialize.toast("Registration Failed Please Retry.", 4000);  
+    } else if($('#isfail').attr('value') == '0'){
+      Materialize.toast("Registration Success.", 4000);  
+    }
+		$("#preloader").css({visibility: "hidden"});
+    	$("#btn").click(function(){
+    	$("#preloader").css({visibility: "visible"});
+        $.get('http://localhost:8000/EnrollResident/'+$('#uid').val()+'/',(data,status)=>{
+        	Materialize.toast(data, 4000);
+        	if (data == 'OTP Generated, Scan Thumb Please.'){
+        		$("#lottie").attr('src',"https:\/\/lottiefiles.com\/iframe\/663-fingerprint-scan");	
+        	}
+        	$("#preloader").css({visibility: "hidden"});
+        });
+    });
+});
+</script>
