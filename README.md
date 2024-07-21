@@ -20,7 +20,7 @@ To demonstrate -
 5. Open BioSample App and Scan thumb there.
 6. Submit.
 
-7. Enter Aadhaar number 903298497974
+7. Enter Aadhaar number 123456789012
 8. Enter OTP
 9. Open BioSample App and Scan thumb there and Submit
 
